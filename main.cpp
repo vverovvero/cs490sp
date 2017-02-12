@@ -1,4 +1,14 @@
 /***************************** Compilation notes *******************************/
+// Update:  
+// Install cairo on MacOSX:  brew install cairo
+// Installs to directory: /usr/local/Cellar/cairo/1.14.2_1
+// Compile in C++ on MacOSX
+// clang++ -I/usr/local/include/cairo/ -L/usr/local/lib -o main main.cpp -lcairo
+// After moving into src:
+// clang++ -I/usr/local/include/cairo/ -L/usr/local/lib -o main src/main.cpp -lcairo
+// Source: http://askubuntu.com/questions/706512/cant-access-cairo-h
+
+
 // For c compilation on OSX: (Change file extension to c)
 // gcc -std=c99 -o main -L/usr/local/lib/cairo/ -lcairo main.c -I/usr/local/include/cairo/
 // For cpp compilation on OSX:
@@ -395,31 +405,31 @@ int main (){
   printf("Rendered! \n");
 
   //////////////////CAIRO///////////////////////
-  // Pixel* imgData = (Pixel *) malloc(sizeof(Pixel) * WIDTH * HEIGHT);
+  Pixel* imgData = (Pixel *) malloc(sizeof(Pixel) * WIDTH * HEIGHT);
 
-  // for (int y=0; y<HEIGHT; y++){
-  //   for (int x=0; x<WIDTH; x++){
+  for (int y=0; y<HEIGHT; y++){
+    for (int x=0; x<WIDTH; x++){
       
-  //     int indexOld = (y * WIDTH * 4) + (x * 4);
-  //     int indexNew = ((HEIGHT - y - 1) * WIDTH) + x;
-  //     imgData[indexNew].B = (unsigned char) img[indexOld + 0];
-  //     imgData[indexNew].G = (unsigned char) img[indexOld + 1];
-  //     imgData[indexNew].R = (unsigned char) img[indexOld + 2];
-  //     imgData[indexNew].A = (unsigned char) img[indexOld + 3];
+      int indexOld = (y * WIDTH * 4) + (x * 4);
+      int indexNew = ((HEIGHT - y - 1) * WIDTH) + x;
+      imgData[indexNew].B = (unsigned char) img[indexOld + 0];
+      imgData[indexNew].G = (unsigned char) img[indexOld + 1];
+      imgData[indexNew].R = (unsigned char) img[indexOld + 2];
+      imgData[indexNew].A = (unsigned char) img[indexOld + 3];
 
-  //   }
-  // }
+    }
+  }
 
-  // int stride = cairo_format_stride_for_width (CAIRO_FORMAT_RGB24, WIDTH);
+  int stride = cairo_format_stride_for_width (CAIRO_FORMAT_RGB24, WIDTH);
 
-  // cairo_surface_t* surface_cairo =
-  //   cairo_image_surface_create_for_data ((unsigned char*)imgData, CAIRO_FORMAT_RGB24, WIDTH, HEIGHT, stride);
+  cairo_surface_t* surface_cairo =
+    cairo_image_surface_create_for_data ((unsigned char*)imgData, CAIRO_FORMAT_RGB24, WIDTH, HEIGHT, stride);
 
 
-  // cairo_surface_write_to_png (surface_cairo, "test.png");
-  // cairo_surface_destroy (surface_cairo);
+  cairo_surface_write_to_png (surface_cairo, "test_wip2.png");
+  cairo_surface_destroy (surface_cairo);
 
-  // free(imgData);
+  free(imgData);
   /////////////////////////////////////////
 
   free(img);

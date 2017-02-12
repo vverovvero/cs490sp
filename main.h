@@ -5,7 +5,7 @@
 #include <float.h>
 #include <time.h>
 
-// #include "cairo.h"
+#include "cairo/cairo.h"
 // usr/local/Cellar/cairo/1.14.2_1
 
 #include "vec3.h"

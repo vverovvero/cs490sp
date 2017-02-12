@@ -28,4 +28,4 @@ TRIANGLE P1(100, 0, 0) P2(100, 0, 100) P3(100, 100, 100) Material(3)
 TRIANGLE P1(100, 100, 100) P2(100, 100, 0) P3(100, 0, 0) Material(3)
 
 
-#INCLUDE Mesh("txt/humanoid.txt") Material()
+#INCLUDE Mesh("scene/humanoid.sce") Material()

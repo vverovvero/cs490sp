@@ -1,0 +1,37 @@
+---------------------------------------------------------------------
+/********************* Miscellaneous to do *************************/
+---------------------------------------------------------------------
+
+-Create more Maya edited obj files (bunny, dragon, teapot, mobster, etc)
+-Separate into src, obj, lib, and bin folders (adjust makefile)
+
+
+---------------------------------------------------------------------
+/*************************** LOG ***********************************/
+---------------------------------------------------------------------
+
+/********** 2/14: Makefile ******************/
+
++Create makefile and resolve compilation issues.
++Change to C++
++Separate out main.h from main.cpp
+
+/********** 2/14: Scene Parsing ************/
+
+OBJparser.py:
++Use Maya to produce edited obj files
++Update OBJparser.py to handle Maya obj files
+
+
+TXTparser.py:
++Take txt file of vertex, face arrays as input
++Produce a .sce file of TRIANGLE primitives
++No material is attached to these primitives (INCLUDE needs to add material)
+
+
+SCEparser.py:
+-Primitives: CAMERA, LIGHT, MATERIAL, SPHERE, TRIANGLE
+-# handle comments
+-INCLUDE - how to take .sce file of TRIANGLES only and add material
+-Transformations, for included geometry mostly
+-Object instancing? INSTANCE 

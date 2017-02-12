@@ -10,6 +10,13 @@ This is the current unidirectional path tracer I have implemented as part of my 
 Geometry obj files from:
 http://people.sc.fsu.edu/~jburkardt/data/obj/obj.html
 
+The source code for this project can be found at:
+https://github.com/vverovvero/cs490sp/tree/master
+
+Branches:
+master 	(last stable release)
+wip 	(developing next feature in LOG)
+
 ---------------------------------------------------------------------
 /**************** Compiling and Rendering **************************/
 ---------------------------------------------------------------------
@@ -41,7 +48,8 @@ To generate a .h header file, use the TXTparser.py script.  [to be written]
 For more complicated geometry, the general workflow is:
 
 .obj -> .txt 	OBJparser.py
-.txt -> .h 		TXTparser.py
+.txt -> .sce 	TXTparser.py
+.sce -> .h 		SCEparser.py
 
 OBJparser.py:
 python ./OBJparser.py <input_obj_file> <output_txt_file>
@@ -49,11 +57,15 @@ python ./OBJparser.py <input_obj_file> <output_txt_file>
 OBJparser.py will take an obj file and produce a vertex array and a face array.
 We assume that these obj files have been exported from Maya.  They are assumed to have been pre-processed such that the object is at the world origin (0, 0, 0) and is aligned with the ground plane to be standing up.
 
-
 TXTparser.py
-python ./TXTparser.py <input_txt_file> <output_h_file>
+python ./TXTparser.py <input_txt_file> <output_sce_file>
 
-TXTparser.py will produce a .h file that contains structs for triangles, spheres, lights, materials, objects...
+TXTparser takes a txt file of vertex and index array.  These txt files must be products of OBJparser.py.
+TXTparser generates .sce files, where the mesh consists only of TRIANGLE primitives.
+No material is associated with the mesh.
+
+
+SCEparser.py will produce a .h file that contains structs for triangles, spheres, lights, materials, objects...
 For geometry, it can handle sphere and triangle primitives.
 It also handles light primitives, material primitives, and object array primitive.
 

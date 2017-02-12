@@ -9,96 +9,7 @@
 
 /***************************** Headers and Structs *******************************/
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <math.h>
-#include <float.h>
-#include <time.h>
-
-#include "cairo.h"
-// usr/local/Cellar/cairo/1.14.2_1
-
-#include "vec3.h"
-
-#define HEIGHT 512
-#define WIDTH 512
-#define PI 3.14159f
-
-typedef struct Camera{
-  vec3 point;
-  float fieldOfView;
-  vec3 toPoint;
-  vec3 up;
-} Camera;
-
-typedef enum {OMNI, SPOT} lightType;
-
-typedef struct Light{
-  lightType type;
-  vec3 point;
-  vec3 color;
-} Light;
-
-typedef struct Sphere{
-  vec3 point;
-  float radius;
-} Sphere;
-
-typedef struct Triangle{
-  vec3 point1;
-  vec3 point2;
-  vec3 point3;
-} Triangle;
-
-typedef enum {PHONG, ORIGINAL} materialType;
-
-typedef struct Material{
-  vec3 color;
-  materialType type;
-  int metal;
-  float specular;
-  float lambert;
-  float ambient;
-  float exponent;
-} Material;
-
-typedef enum {SPHERE, TRIANGLE} objectType;
-
-typedef struct Object{
-  int matIndex;
-  objectType type;
-  void* object;
-} Object;
-
-typedef struct Ray{
-  vec3 point;
-  vec3 vector;
-} Ray;
-
-//Fill in SceneStruct later
-typedef struct Scene{
-  Camera* camera;
-  Material* materials;
-  Object* objects;
-  Light* lights;
-  int n_lights;
-  int n_objects;
-  int n_materials;
-} Scene;
-
-typedef struct Dist{
-  float distance;
-  Object* object;
-} Dist;
-
-typedef struct Pixel{
-  unsigned char A;
-  unsigned char R;
-  unsigned char G;
-  unsigned char B;
-} Pixel;
-
+#include "main.h"
 
 /***************************** Forward declarations *******************************/
 
@@ -349,13 +260,13 @@ float* render(Scene* scene) {
         // For Assign 6, brute-force antialiasing with 25 samples/pixel
         vec3 color = ZERO;
 
-        for (float s = -.4f; s < .6f; s+=.2f) {
-          for (float r = -.4f; r < .6; r +=.2f) {
+        // for (float s = -.4f; s < .6f; s+=.2f) {
+        //   for (float r = -.4f; r < .6; r +=.2f) {
         //
-            vec3 xcomp = scale(vpRight, ((x+s) * pixelWidth) - halfWidth);
-            vec3 ycomp = scale(vpUp, ((y+r) * pixelHeight) - halfHeight);
+            // vec3 xcomp = scale(vpRight, ((x+s) * pixelWidth) - halfWidth);
+            // vec3 ycomp = scale(vpUp, ((y+r) * pixelHeight) - halfHeight);
         
-            ray.vector = unitVector(add3(eyeVector, xcomp, ycomp));
+            // ray.vector = unitVector(add3(eyeVector, xcomp, ycomp));
         //
         //     // use the vector generated to raytrace the scene, returning a color
         //     // as a `{x, y, z}` vector of RGB values
@@ -363,9 +274,9 @@ float* render(Scene* scene) {
 
             //One ray per pixel; no antialiasing
             ray.point = camera->point;
-            // vec3 xcomp = scale(vpRight, ((x) * pixelWidth) - halfWidth);
-            // vec3 ycomp = scale(vpUp, ((y) * pixelHeight) - halfHeight);
-            // ray.vector = unitVector(add3(eyeVector, xcomp, ycomp));
+            vec3 xcomp = scale(vpRight, ((x) * pixelWidth) - halfWidth);
+            vec3 ycomp = scale(vpUp, ((y) * pixelHeight) - halfHeight);
+            ray.vector = unitVector(add3(eyeVector, xcomp, ycomp));
             // printf("Ray point (%f, %f, %f); ray vector (%f, %f, %f)\n", ray.point.x, ray.point.y, ray.point.z, ray.vector.x, ray.vector.y, ray.vector.z);
             //Direct lighting
             vec3 pointAtTime = ray.point; //first intersection point is ray origin
@@ -431,8 +342,8 @@ float* render(Scene* scene) {
 
             }
             ////////////////////////////////////////////
-          }
-        }
+        //   }
+        // }
 
         // printf("at x=%d y=%d, Color is (%f, %f, %f)\n", x, y, color.x, color.y, color.z);
         color = scale(color, 0.04);
@@ -484,31 +395,31 @@ int main (){
   printf("Rendered! \n");
 
   //////////////////CAIRO///////////////////////
-  Pixel* imgData = (Pixel *) malloc(sizeof(Pixel) * WIDTH * HEIGHT);
+  // Pixel* imgData = (Pixel *) malloc(sizeof(Pixel) * WIDTH * HEIGHT);
 
-  for (int y=0; y<HEIGHT; y++){
-    for (int x=0; x<WIDTH; x++){
+  // for (int y=0; y<HEIGHT; y++){
+  //   for (int x=0; x<WIDTH; x++){
       
-      int indexOld = (y * WIDTH * 4) + (x * 4);
-      int indexNew = ((HEIGHT - y - 1) * WIDTH) + x;
-      imgData[indexNew].B = (unsigned char) img[indexOld + 0];
-      imgData[indexNew].G = (unsigned char) img[indexOld + 1];
-      imgData[indexNew].R = (unsigned char) img[indexOld + 2];
-      imgData[indexNew].A = (unsigned char) img[indexOld + 3];
+  //     int indexOld = (y * WIDTH * 4) + (x * 4);
+  //     int indexNew = ((HEIGHT - y - 1) * WIDTH) + x;
+  //     imgData[indexNew].B = (unsigned char) img[indexOld + 0];
+  //     imgData[indexNew].G = (unsigned char) img[indexOld + 1];
+  //     imgData[indexNew].R = (unsigned char) img[indexOld + 2];
+  //     imgData[indexNew].A = (unsigned char) img[indexOld + 3];
 
-    }
-  }
+  //   }
+  // }
 
-  int stride = cairo_format_stride_for_width (CAIRO_FORMAT_RGB24, WIDTH);
+  // int stride = cairo_format_stride_for_width (CAIRO_FORMAT_RGB24, WIDTH);
 
-  cairo_surface_t* surface_cairo =
-    cairo_image_surface_create_for_data ((unsigned char*)imgData, CAIRO_FORMAT_RGB24, WIDTH, HEIGHT, stride);
+  // cairo_surface_t* surface_cairo =
+  //   cairo_image_surface_create_for_data ((unsigned char*)imgData, CAIRO_FORMAT_RGB24, WIDTH, HEIGHT, stride);
 
 
-  cairo_surface_write_to_png (surface_cairo, "test.png");
-  cairo_surface_destroy (surface_cairo);
+  // cairo_surface_write_to_png (surface_cairo, "test.png");
+  // cairo_surface_destroy (surface_cairo);
 
-  free(imgData);
+  // free(imgData);
   /////////////////////////////////////////
 
   free(img);

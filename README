@@ -1,32 +1,61 @@
 Wendy Chen
 CPSC 490 Spring 2017
 
+---------------------------------------------------------------------
+/************************* General Notes ***************************/
+---------------------------------------------------------------------
+
 This is the current unidirectional path tracer I have implemented as part of my study into path tracing theory.
 
-The cairo image library is currently installed on my personal machine (MacOSX), and the code can be compiled with:
-gcc -std=c99 -o main -L/usr/local/lib/cairo/ -lcairo main.c -I/usr/local/include/cairo/
+Geometry obj files from:
+http://people.sc.fsu.edu/~jburkardt/data/obj/obj.html
+
+---------------------------------------------------------------------
+/**************** Compiling and Rendering **************************/
+---------------------------------------------------------------------
+
+This path tracer was developed on MacOSX in C++.  The cairo image library needs to be installed.
+
+If you are a Mac user, you can install cairo with the command:
+brew install cairo
 
 To compile on a different machine, you will need to have cairo correctly installed.
----
 
-TO DO (for 2/14)
+Using the provided makefile, simply type 'make' to generate an executable named 'main'.
+To manually compile on MacOSX with clang++, the following can be entered on the command line:
+clang++ -I/usr/local/include/cairo/ -L/usr/local/lib -o main main.cpp -lcairo
 
-/********** Makefile ******************/
+Currently, the scene and image output file name can be modified only manually within the source code.
+Change the .h file that is loaded if you would like to change the scene file.
+Change the output file name in the cairo png generation loop.
 
-Create makefile and resolve compilation issues.
-Change to C++
-Separate out main.h from main.cpp
+The output of this program is a .png that shows the rendered scene.
+
+---------------------------------------------------------------------
+/*********************** Scene files *******************************/
+---------------------------------------------------------------------
+
+This path tracer accepts scene information in the form of a .h header file.
+To generate a .h header file, use the TXTparser.py script.  [to be written]
+
+For more complicated geometry, the general workflow is:
+
+.obj -> .txt 	OBJparser.py
+.txt -> .h 		TXTparser.py
+
+OBJparser.py:
+python ./OBJparser.py <input_obj_file> <output_txt_file>
+
+OBJparser.py will take an obj file and produce a vertex array and a face array.
+We assume that these obj files have been exported from Maya.  They are assumed to have been pre-processed such that the object is at the world origin (0, 0, 0) and is aligned with the ground plane to be standing up.
 
 
-/********** Scene Parsing ************/
+TXTparser.py
+python ./TXTparser.py <input_txt_file> <output_h_file>
 
-Primitives: like Plane, Box, etc...
-Object instancing?
-Transformation
-
-Parse a transformation and apply to primitive, get world coordinates
+TXTparser.py will produce a .h file that contains structs for triangles, spheres, lights, materials, objects...
+For geometry, it can handle sphere and triangle primitives.
+It also handles light primitives, material primitives, and object array primitive.
 
 
-Restricted set of primitives
-OBJ files that have been resized and centered at the origin
-Apply basic transformations to them
+

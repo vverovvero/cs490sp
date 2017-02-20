@@ -1,8 +1,18 @@
+cd /Users/wendychen/Desktop/cs490_serial_raytracer/undirectional_pathtracer
+
+---------------------------------------------------------------------
+/********************* Latest meeting *************************/
+---------------------------------------------------------------------
+
+2/14:
+-inside of the .h file, the vertices can be stored in their own array and
+referenced by index in the triangle structs
+
+
 ---------------------------------------------------------------------
 /********************* Miscellaneous to do *************************/
 ---------------------------------------------------------------------
 
--Create more Maya edited obj files (bunny, dragon, teapot, mobster, etc)
 -Separate into src, obj, lib, and bin folders (adjust makefile)
 
 
@@ -29,9 +39,23 @@ TXTparser.py:
 +No material is attached to these primitives (INCLUDE needs to add material)
 
 
+/********* 2/21: Scene Parsing & Acceleration ******/
+
++Create more Maya edited obj files (bunny, dragon, teapot, mobster, etc)
+
 SCEparser.py:
 -Primitives: CAMERA, LIGHT, MATERIAL, SPHERE, TRIANGLE
 -# handle comments
 -INCLUDE - how to take .sce file of TRIANGLES only and add material
 -Transformations, for included geometry mostly
 -Object instancing? INSTANCE 
+
+
+Acceleration structure:
+-kd tree adaptation
+
+
+
+
+
+

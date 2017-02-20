@@ -69,5 +69,10 @@ SCEparser.py will produce a .h file that contains structs for triangles, spheres
 For geometry, it can handle sphere and triangle primitives.
 It also handles light primitives, material primitives, and object array primitive.
 
+.sce file specification:
+Initialize primitives such as:
+CAMERA, LIGHT, MATERIAL, SPHERE, TRIANGLE, INCLUDE
+Important: Material Indices begin at 0!  User must keep this in mind when specifying TRIANGLE or SPHERE primitives
+
 
 

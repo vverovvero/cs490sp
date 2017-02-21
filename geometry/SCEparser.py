@@ -13,10 +13,8 @@
 ############################################################################################
 
 # TO DO
-# scene class, where create an instance that we fill up
-# parsing for basic classes
-# generation of h file for basic classes
-# add support for transformations
+# add support for transformations (Translate, Rotate, Scale)
+# add support for INCLUDE flag
 
 import re
 import sys
@@ -151,7 +149,7 @@ def writeH(scene, h_name):
 	for i in range(scene.n_materials):
 		mat = scene.materials[i]
 		buf_mat = ("\t{\n"
-			"\t\t.color = {\n\t\t\t.x = %ff,\n\t\t\t.y = %ff,\n\t\t\t.z = %ff\n\t\t}\n"
+			"\t\t.color = {\n\t\t\t.x = %ff,\n\t\t\t.y = %ff,\n\t\t\t.z = %ff\n\t\t},\n"
 			"\t\t.type = %s,\n"
 			"\t\t.metal = %d,\n"
 			"\t\t.specular = %ff,\n"
@@ -249,32 +247,147 @@ def writeH(scene, h_name):
 
 #CAMERA Point(50, 50, 50) LookAt(50, 25, 0) FOV(60) Up(UP)
 
+#sample token_string
+#Type(OMNI) Point(50, 95, 50) Color(155, 155, 155)
 
-class CAMERA(object):
+#[string] -> ['Point(50, 50, 50)', 'LookAt(20, 50, 60)', ...]
+def getAttrList(tokens):
+	if not tokens:
+		return []
+	else:
+		token_string = tokens[0]
+		attrList = list()
+		m = re.match(r"(\w*\([^\)]*\))(\s*)(.*)", token_string)
+		while(m != None):
+			attrList.append(m.group(1))
+			m = re.match(r"(\w*\([^\)]*\))(\s*)(.*)", m.group(3))
+		return attrList
+
+#modified from:
+#http://stackoverflow.com/questions/642154/how-to-convert-strings-into-integers-in-python
+def is_int(var):
+    try:
+        int(var)
+        return True
+    except Exception:
+        return False
+
+def is_float(var):
+    try:
+        float(var)
+        return True
+    except Exception:
+        return False
+
+#'Point(50, 50, 50)' -> ['Point', [50, 50, 50]]
+def getAttr(attribute):
+	m = re.match(r"(\w*)\(([^\)]*)\)", attribute)
+	if(m != None):
+		function = m.group(1)
+		args = m.group(2)
+		argString_list = [x.strip() for x in args.split(',')]
+		args_list = list()
+		for arg in argString_list:
+			if is_int(arg):
+				args_list.append(int(arg))
+			elif is_float(arg):
+				args_list.append(float(arg))
+			else:
+				args_list.append(arg)
+		return (function, args_list)
+	return ()
+
+# CAMERA parsing object
+class Parser(object):
 
 	def __init__(self):
 		pass
 
-	def Point(self):
-		pass
+	def camera(self, scene, attributes):
+		# print attributes
+		camera_args = dict()
+		for attribute in attributes:
+			#Get [function, args_list]for each attribute
+			(function, args_list) = getAttr(attribute)
+			if function == "Point":
+				camera_args["Point"] = (args_list[0], args_list[1], args_list[2])
+			elif function == "LookAt":
+				camera_args["LookAt"] = (args_list[0], args_list[1], args_list[2])
+			elif function == "FOV":
+				camera_args["FOV"] = args_list[0]
+			elif function == "Up":
+				camera_args["Up"] = args_list[0]
+			else:
+				print "Invalid Camera attribute: " + function
+		# print camera_args
+		scene.add_camera(camera_args["Point"], camera_args["LookAt"], camera_args["FOV"], camera_args["Up"])
 
-	def LookAt(self):
-		pass
+	def light(self, scene, attributes):
+		light_args = dict()
+		for attribute in attributes:
+			(function, args_list) = getAttr(attribute)
+			if function == "Type":
+				light_args["Type"] = args_list[0]
+			elif function == "Point":
+				light_args["Point"] = (args_list[0], args_list[1], args_list[2])
+			elif function == "Color":
+				light_args["Color"] = (args_list[0], args_list[1], args_list[2])
+			else:
+				print "Invalid Light attribute: " + function
+		scene.add_light(light_args["Type"], light_args["Point"], light_args["Color"])
 
-	def FOV(self):
-		pass
+	def material(self, scene, attributes):
+		mat_args = dict()
+		for attribute in attributes:
+			(function, args_list) = getAttr(attribute)
+			if function == "Color":
+				mat_args["Color"] = (args_list[0], args_list[1], args_list[2])
+			elif function == "Type":
+				mat_args["Type"] = args_list[0]
+			elif function == "Metal":
+				mat_args["Metal"] = args_list[0]
+			elif function == "Specular":
+				mat_args["Specular"] = args_list[0]
+			elif function == "Lambert":
+				mat_args["Lambert"] = args_list[0]
+			elif function == "Ambient":
+				mat_args["Ambient"] = args_list[0]
+			elif function == "Exponent":
+				mat_args["Exponent"] = args_list[0]
+			else:
+				print "Invalid Material attribute: " + function
+		scene.add_material(mat_args["Color"], mat_args["Type"], mat_args["Metal"], mat_args["Specular"], mat_args["Lambert"],
+			mat_args["Ambient"], mat_args["Exponent"])
 
-	def Up(self):
-		pass
+	def sphere(self, scene, attributes):
+		sphere_args = dict()
+		for attribute in attributes:
+			(function, args_list) = getAttr(attribute)
+			if function == "Point":
+				sphere_args["Point"] = (args_list[0], args_list[1], args_list[2])
+			elif function == "Radius":
+				sphere_args["Radius"] = args_list[0]
+			elif function == "Material":
+				sphere_args["Material"] = args_list[0]
+			else:
+				print "Invalid Sphere attribute: " + function			
+		scene.add_sphere(sphere_args["Point"], sphere_args["Radius"], sphere_args["Material"])
 
-	def parse(self, scene, attributes):
-		print attributes
-
-#string -> 'Point(50, 50, 50)', 'LookAt(20, 50, 60)', ...
-def getAttrList(tokens_string):
-	# m = re.match(r"v(\s*)(-*[0-9]*[.][0-9]*)(\s*)(-*[0-9]*[.][0-9]*)(\s*)(-*[0-9]*[.][0-9]*)", lyne)
-	#match the first [A-Za-z]+(..., ..., ...), throw away and  continue until end of line
-	return tokens_string
+	def triangle(self, scene, attributes):
+		tri_args = dict()
+		for attribute in attributes:
+			(function, args_list) = getAttr(attribute)
+			if function == "P1":
+				tri_args["P1"] = (args_list[0], args_list[1], args_list[2])
+			elif function == "P2":
+				tri_args["P2"] = (args_list[0], args_list[1], args_list[2])
+			elif function == "P3":
+				tri_args["P3"] = (args_list[0], args_list[1], args_list[2])
+			elif function == "Material":
+				tri_args["Material"] = args_list[0]
+			else:
+				print "Invalid Triangle attribute: " + function
+		scene.add_triangle(tri_args["P1"], tri_args["P2"], tri_args["P3"], tri_args["Material"])
 
 #open SCE, iterate through each line and call correct primitive construction
 #use regular expression to get dict fields
@@ -282,8 +395,8 @@ def parseSCE(input_file):
 	#initialize scene object#############
 	scene = Scene()
 
-	#initialize parsers##################
-	Camera = CAMERA()
+	#initialize parser##################
+	Parse = Parser()
 
 	#parse .sce -> scene object##########
 	sce = open(input_file)
@@ -292,16 +405,20 @@ def parseSCE(input_file):
 		keyword = tokens[0]
 		attributes = getAttrList(tokens[1:])
 		if keyword == "CAMERA":
-			print "CAMERA PARSER"
-			Camera.parse(scene, attributes)
+			# print "CAMERA PARSER"
+			Parse.camera(scene, attributes)
 		elif keyword == "LIGHT":
-			print "LIGHT PARSER"
+			# print "LIGHT PARSER"
+			Parse.light(scene, attributes)
 		elif keyword == "MATERIAL":
-			print "MATERIAL PARSER"
+			# print "MATERIAL PARSER"
+			Parse.material(scene, attributes)
 		elif keyword == "SPHERE":
-			print "SPHERE PARSER"
+			# print "SPHERE PARSER"
+			Parse.sphere(scene, attributes)
 		elif keyword == "TRIANGLE":
-			print "TRIANGLE PARSER"
+			# print "TRIANGLE PARSER"
+			Parse.triangle(scene, attributes)
 		elif keyword == "INCLUDE":
 			print "INCLUDE PARSER"
 		elif keyword == "\n":
@@ -313,15 +430,11 @@ def parseSCE(input_file):
 	sce.close
 
 	#write scene object -> .h############
-	# writeH(scene, sys.argv[2])
+	writeH(scene, sys.argv[2])
 
 
 
-
-
-
-
-##########
+##############################################
 
 parseSCE(sys.argv[1])
 

@@ -1,4 +1,4 @@
-CAMERA Point(50, 50, 50) LookAt(50, 25, 0) FOV(60) Up(UP)
+CAMERA Point(50, 50, 200) LookAt(50, 25, 0) FOV(60) Up(UP)
 
 LIGHT Type(OMNI) Point(50, 95, 50) Color(155, 155, 155)
 LIGHT Type(OMNI) Point(5, 95, 100) Color(255, 220, 200)
@@ -14,6 +14,7 @@ MATERIAL Color(200, 170, 60) Type(PHONG) Metal(1) Specular(0.5) Lambert(0.4) Amb
 
 SPHERE Point(70, 25, 50) Radius(25) Material(2)
 SPHERE Point(20, 10, 50) Radius(10) Material(3)
+SPHERE Point(50, 10, 25) Radius(10) Material(1)
 
 
 TRIANGLE P1(0, 0, 0) P2(100, 0, 0) P3(0, 100, 0) Material(1)

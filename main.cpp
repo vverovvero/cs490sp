@@ -392,7 +392,7 @@ void tone_map(float* img, int size){
 
 int main (){
 
-  #include "scene_orig.h"
+  #include "geometry/test.h"
 
   //initalize random number generator
   srand48(time(NULL));
@@ -426,7 +426,7 @@ int main (){
     cairo_image_surface_create_for_data ((unsigned char*)imgData, CAIRO_FORMAT_RGB24, WIDTH, HEIGHT, stride);
 
 
-  cairo_surface_write_to_png (surface_cairo, "test_wip2.png");
+  cairo_surface_write_to_png (surface_cairo, "test_basic_parser01.png");
   cairo_surface_destroy (surface_cairo);
 
   free(imgData);

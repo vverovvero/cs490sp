@@ -44,8 +44,8 @@ TXTparser.py:
 +Create more Maya edited obj files (bunny, dragon, teapot, mobster, etc)
 
 SCEparser.py:
--Primitives: CAMERA, LIGHT, MATERIAL, SPHERE, TRIANGLE
--# handle comments
++Primitives: CAMERA, LIGHT, MATERIAL, SPHERE, TRIANGLE
++# handle comments
 -INCLUDE - how to take .sce file of TRIANGLES only and add material
 -Transformations, for included geometry mostly
 -Object instancing? INSTANCE 

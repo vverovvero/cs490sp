@@ -9,6 +9,10 @@ cd /Users/wendychen/Desktop/cs490_serial_raytracer/undirectional_pathtracer
 referenced by index in the triangle structs
 
 
+2/21:
+-read in the geometry at run time instead
+-send progress report for next week
+
 ---------------------------------------------------------------------
 /********************* Miscellaneous to do *************************/
 ---------------------------------------------------------------------
@@ -39,7 +43,7 @@ TXTparser.py:
 +No material is attached to these primitives (INCLUDE needs to add material)
 
 
-/********* 2/21: Scene Parsing & Acceleration ******/
+/********* 2/21: Scene Parsing  ******/
 
 +Create more Maya edited obj files (bunny, dragon, teapot, mobster, etc)
 
@@ -48,14 +52,20 @@ SCEparser.py:
 +# handle comments
 -INCLUDE - how to take .sce file of TRIANGLES only and add material
 -Transformations, for included geometry mostly
--Object instancing? INSTANCE 
+	-Sphere and Triangle parsers need to take care of transforms
+	-how to handle transforms in order? and more than one of one kind?
 
+-Object instancing? INSTANCE 
 
 Acceleration structure:
 -kd tree adaptation
 
+/********* 2/28: Solving .h file problem  ******/
 
+-rewrite .py with c++ parser, using regex
+-Question: when adding sphere or triangle, should object array be edited?  or should intermediate scene rep for sphere and triangle contain a mat index?
+Could be like tuples <sphere, matindex>
 
-
+-how to get makefile to compile
 
 

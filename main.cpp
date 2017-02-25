@@ -20,6 +20,7 @@
 /***************************** Headers and Structs *******************************/
 
 #include "main.h"
+#include "SCEparser.h"
 
 /***************************** Forward declarations *******************************/
 
@@ -390,49 +391,56 @@ void tone_map(float* img, int size){
 
 /***************************** Main loop *******************************/
 
-int main (){
-
-  #include "geometry/test.h"
-
-  //initalize random number generator
-  srand48(time(NULL));
-
-  // This is MALLOCED!!
-  float* img = render(&s_scene);
-
-  tone_map(img, HEIGHT * WIDTH * 4);
-
-  printf("Rendered! \n");
-
-  //////////////////CAIRO///////////////////////
-  Pixel* imgData = (Pixel *) malloc(sizeof(Pixel) * WIDTH * HEIGHT);
-
-  for (int y=0; y<HEIGHT; y++){
-    for (int x=0; x<WIDTH; x++){
-      
-      int indexOld = (y * WIDTH * 4) + (x * 4);
-      int indexNew = ((HEIGHT - y - 1) * WIDTH) + x;
-      imgData[indexNew].B = (unsigned char) img[indexOld + 0];
-      imgData[indexNew].G = (unsigned char) img[indexOld + 1];
-      imgData[indexNew].R = (unsigned char) img[indexOld + 2];
-      imgData[indexNew].A = (unsigned char) img[indexOld + 3];
-
-    }
-  }
-
-  int stride = cairo_format_stride_for_width (CAIRO_FORMAT_RGB24, WIDTH);
-
-  cairo_surface_t* surface_cairo =
-    cairo_image_surface_create_for_data ((unsigned char*)imgData, CAIRO_FORMAT_RGB24, WIDTH, HEIGHT, stride);
-
-
-  cairo_surface_write_to_png (surface_cairo, "test_basic_parser01.png");
-  cairo_surface_destroy (surface_cairo);
-
-  free(imgData);
-  /////////////////////////////////////////
-
-  free(img);
-
+int main(int argc, char const *argv[])
+{
+  //Test the scene parser
+  test();
   return 0;
 }
+
+// int main (){
+
+//   #include "geometry/test2.h"
+
+//   //initalize random number generator
+//   srand48(time(NULL));
+
+//   // This is MALLOCED!!
+//   float* img = render(&s_scene);
+
+//   tone_map(img, HEIGHT * WIDTH * 4);
+
+//   printf("Rendered! \n");
+
+//   //////////////////CAIRO///////////////////////
+//   Pixel* imgData = (Pixel *) malloc(sizeof(Pixel) * WIDTH * HEIGHT);
+
+//   for (int y=0; y<HEIGHT; y++){
+//     for (int x=0; x<WIDTH; x++){
+      
+//       int indexOld = (y * WIDTH * 4) + (x * 4);
+//       int indexNew = ((HEIGHT - y - 1) * WIDTH) + x;
+//       imgData[indexNew].B = (unsigned char) img[indexOld + 0];
+//       imgData[indexNew].G = (unsigned char) img[indexOld + 1];
+//       imgData[indexNew].R = (unsigned char) img[indexOld + 2];
+//       imgData[indexNew].A = (unsigned char) img[indexOld + 3];
+
+//     }
+//   }
+
+//   int stride = cairo_format_stride_for_width (CAIRO_FORMAT_RGB24, WIDTH);
+
+//   cairo_surface_t* surface_cairo =
+//     cairo_image_surface_create_for_data ((unsigned char*)imgData, CAIRO_FORMAT_RGB24, WIDTH, HEIGHT, stride);
+
+
+//   cairo_surface_write_to_png (surface_cairo, "test_basic_parser03.png");
+//   cairo_surface_destroy (surface_cairo);
+
+//   free(imgData);
+//   /////////////////////////////////////////
+
+//   free(img);
+
+//   return 0;
+// }

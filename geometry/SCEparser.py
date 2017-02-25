@@ -359,7 +359,7 @@ class Parser(object):
 		scene.add_material(mat_args["Color"], mat_args["Type"], mat_args["Metal"], mat_args["Specular"], mat_args["Lambert"],
 			mat_args["Ambient"], mat_args["Exponent"])
 
-	def sphere(self, scene, attributes):
+	def sphere(self, scene, attributes, defaultMaterial, defaultTranslate, defaultRotate, defaultScale):
 		sphere_args = dict()
 		for attribute in attributes:
 			(function, args_list) = getAttr(attribute)
@@ -369,11 +369,19 @@ class Parser(object):
 				sphere_args["Radius"] = args_list[0]
 			elif function == "Material":
 				sphere_args["Material"] = args_list[0]
+			elif function == "Translate":
+				pass
+			elif function == "Rotate":
+				pass
+			elif function == "Scale":
+				pass
 			else:
-				print "Invalid Sphere attribute: " + function			
+				print "Invalid Sphere attribute: " + function	
+		if defaultMaterial:
+			sphere_args["Material"] = defaultMaterial		
 		scene.add_sphere(sphere_args["Point"], sphere_args["Radius"], sphere_args["Material"])
 
-	def triangle(self, scene, attributes):
+	def triangle(self, scene, attributes, defaultMaterial, defaultTranslate, defaultRotate, defaultScale):
 		tri_args = dict()
 		for attribute in attributes:
 			(function, args_list) = getAttr(attribute)
@@ -385,9 +393,90 @@ class Parser(object):
 				tri_args["P3"] = (args_list[0], args_list[1], args_list[2])
 			elif function == "Material":
 				tri_args["Material"] = args_list[0]
+			elif function == "Translate":
+				tri_args["Translate"] = (args_list[0], args_list[1], args_list[2])
+			elif function == "Rotate":
+				tri_args["Rotate"] = (args_list[0], args_list[1], args_list[2])
+			elif function == "Scale":
+				tri_args["Scale"] = (args_list[0], args_list[1], args_list[2])
 			else:
 				print "Invalid Triangle attribute: " + function
+		#override with defaults
+		if defaultMaterial:
+			tri_args["Material"] = defaultMaterial
+		if defaultTranslate:
+			tri_args["Translate"] = defaultTranslate
+		if defaultRotate:
+			tri_args["Rotate"] = defaultRotate
+		if defaultScale:
+			tri_args["Scale"] = defaultScale
+		#apply transformations
+		if tri_args.get("Scale", None) != None:
+			(sx, sy, sz) = tri_args["Scale"]
+			for key in ["P1", "P2", "P3"]:
+				(x, y, z) = tri_args[key]
+				tri_args[key] = (x*sx, y*sy, z*sz)
+		if tri_args.get("Translate", None) != None:
+			(tx, ty, tz) = tri_args["Translate"]
+			for key in ["P1", "P2", "P3"]:
+				(x, y, z) = tri_args[key]
+				tri_args[key] = (x+tx, y+ty, z+tz)
+		if tri_args.get("Rotate", None) != None:
+			pass
+		
+		#add triangle to scene
 		scene.add_triangle(tri_args["P1"], tri_args["P2"], tri_args["P3"], tri_args["Material"])
+		
+
+
+	def include(self, scene, attributes):
+		inc_args = dict()
+		for attribute in attributes:
+			print getAttr(attribute)
+			(function, args_list) = getAttr(attribute)
+			if function == "Mesh":
+				inc_args["Mesh"] = args_list[0]
+			elif function == "Material":
+				inc_args["Material"] = args_list[0]
+			elif function == "Translate":
+				inc_args["Translate"] = (args_list[0], args_list[1], args_list[2])
+			elif function == "Rotate":
+				inc_args["Rotate"] = (args_list[0], args_list[1], args_list[2])
+			elif function == "Scale":
+				inc_args["Scale"] = (args_list[0], args_list[1], args_list[2])
+			else:
+				print "Invalid Include attribute: " + function
+
+		##After getting all arguments, then add mesh
+		if inc_args:
+			handle = open(inc_args["Mesh"])
+			for line in handle:
+				tokens = line.split(' ', 1)
+				keyword = tokens[0]
+				attributes = getAttrList(tokens[1:])
+				if keyword == "CAMERA":
+					# print "CAMERA PARSER"
+					self.camera(scene, attributes)
+				elif keyword == "LIGHT":
+					# print "LIGHT PARSER"
+					self.light(scene, attributes)
+				elif keyword == "MATERIAL":
+					# print "MATERIAL PARSER"
+					self.material(scene, attributes)
+				elif keyword == "SPHERE":
+					# print "SPHERE PARSER"
+					self.sphere(scene, attributes, inc_args["Material"], inc_args["Translate"], inc_args["Rotate"], inc_args["Scale"])
+				elif keyword == "TRIANGLE":
+					# print "TRIANGLE PARSER"
+					self.triangle(scene, attributes, inc_args["Material"], inc_args["Translate"], inc_args["Rotate"], inc_args["Scale"])
+				elif keyword == "\n":
+					pass
+				elif keyword[0] == "#":
+					pass
+				else:
+					print "Unsupported Include Directive: " + keyword
+			handle.close
+
 
 #open SCE, iterate through each line and call correct primitive construction
 #use regular expression to get dict fields
@@ -415,12 +504,13 @@ def parseSCE(input_file):
 			Parse.material(scene, attributes)
 		elif keyword == "SPHERE":
 			# print "SPHERE PARSER"
-			Parse.sphere(scene, attributes)
+			Parse.sphere(scene, attributes, None, None, None, None)
 		elif keyword == "TRIANGLE":
 			# print "TRIANGLE PARSER"
-			Parse.triangle(scene, attributes)
+			Parse.triangle(scene, attributes, None, None, None, None)
 		elif keyword == "INCLUDE":
-			print "INCLUDE PARSER"
+			# print "INCLUDE PARSER"
+			Parse.include(scene, attributes)
 		elif keyword == "\n":
 			pass
 		elif keyword[0] == "#":

@@ -74,6 +74,7 @@ Initialize primitives such as:
 CAMERA, LIGHT, MATERIAL, SPHERE, TRIANGLE, INCLUDE
 Important: Material Indices begin at 0!  User must keep this in mind when specifying TRIANGLE or SPHERE primitives
 Important: Any scene file must contain a camera
+Important: INCLUDE cannot contain nested INCLUDEs
 
 ---------------------------------------------------------------------
 /*********************** Acceleration ******************************/

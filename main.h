@@ -1,3 +1,7 @@
+#ifndef MAIN_H
+#define MAIN_H
+
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -9,6 +13,8 @@
 // usr/local/Cellar/cairo/1.14.2_1
 
 #include "vec3.h"
+
+
 
 #define HEIGHT 512
 #define WIDTH 512
@@ -87,3 +93,6 @@ typedef struct Pixel{
   unsigned char G;
   unsigned char B;
 } Pixel;
+
+
+#endif

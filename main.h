@@ -38,12 +38,14 @@ typedef struct Light{
 typedef struct Sphere{
   vec3 point;
   float radius;
+  int matIndex;
 } Sphere;
 
 typedef struct Triangle{
   vec3 point1;
   vec3 point2;
   vec3 point3;
+  int matIndex;
 } Triangle;
 
 typedef enum {PHONG, ORIGINAL} materialType;

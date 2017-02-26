@@ -50,6 +50,10 @@ public:
 	void add_sphere(vec3 point, float radius, int materialIndex);
 	void add_triangle(vec3 point1, vec3 point2, vec3 point3, int materialIndex);
 
+	void free_camera();
+
+	void print_camera();
+
 };
 
 
@@ -63,7 +67,7 @@ public:
 	//do we need attribute parsing functions?
 
 	//when SCEscene object is made, can call this
-	void writeH(SCEscene scene, char * h_name);
+	struct Scene * writeH(SCEscene scene, char * h_name);
 };
 
 

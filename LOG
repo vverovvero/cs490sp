@@ -62,10 +62,18 @@ Acceleration structure:
 
 /********* 2/28: Solving .h file problem  ******/
 
++how to get makefile to compile
+
 -rewrite .py with c++ parser, using regex
 -Question: when adding sphere or triangle, should object array be edited?  or should intermediate scene rep for sphere and triangle contain a mat index?
 Could be like tuples <sphere, matindex>
 
--how to get makefile to compile
++make very simple scene of one sphere and two tris
+-change Triangle struct and Sphere struct to hold a material index
+-change static arrays to be lists?
+-try mallocing and freeing it in a test function
+-render this very simple scene
+-if it all works well, then continue building SCEparser
+
 
 

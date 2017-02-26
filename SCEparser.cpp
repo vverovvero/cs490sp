@@ -7,9 +7,7 @@
 #include <iostream>
 #include <stdlib.h> //has exit, EXIT_FAILURE
 
-void test(void){
-	printf("hi\n");
-}
+
 
 // //////////////////////////////////////////////////////////////////////
 // //Helper functions
@@ -314,12 +312,42 @@ void test(void){
 // 	return pair<int, uint64_t> (0, Infinity);
 // }
 
+// typedef struct Camera{
+//   vec3 point;
+//   float fieldOfView;
+//   vec3 toPoint;
+//   vec3 up;
+// } Camera;
+
+void SCEscene::add_camera(vec3 point, vec3 toPoint, float fieldOfView, vec3 up){
+	Camera* camera; 
+	camera = (Camera *) malloc(sizeof(struct Camera));
+	camera->point = point;
+	camera->toPoint = toPoint;
+	camera->fieldOfView = fieldOfView;
+	camera->up = up;
+
+	this->cameras.push_back(*camera);
+}
+
+void SCEscene::print_camera(void){
+
+};
 
 
 
 
 
+////////////////////
 
+vec3 point = {.x=0.0, .y=0.0, .z=0.0};
+vec3 toPoint = {.x=6.0, .y=6.0, .z=6.0};
+
+void test(void){
+	SCEscene scene = SCEscene();
+	scene.add_camera(point, toPoint, 60, UP);
+
+}
 
 
 

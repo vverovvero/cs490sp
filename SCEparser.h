@@ -70,17 +70,24 @@ class Parse
 {
 private:
 	//unordered map for attributes, flush after each use
+	vector<char *> attrList; //keep track of insertion order of attrs
+	unordered_map<char *, char *> attrMap; //keep for look up of attr -> args
 public:
 	//do we need attribute parsing functions?
 
 	//when SCEscene object is made, can call this
 	// struct Scene * writeH(SCEscene scene, char * h_name);
-	void camera(SCEscene scene, char * attributes);
-	void light(SCEscene scene, char * attributes);
-	void material(SCEscene scene, char * attributes);
-	void sphere(SCEscene scene, char * attributes);
-	void triangle(SCEscene scene, char * attributes);
-	void include(SCEscene scene, char * attributes);
+	void getAttrs(char * attributes); //for filling attrList, attrMap
+	void flushAttrs(); //flush attrList and attrMap after use
+
+	void printAttrs(); //print attrList and attrMap
+
+	// void camera(SCEscene scene, char * attributes);
+	// void light(SCEscene scene, char * attributes);
+	// void material(SCEscene scene, char * attributes);
+	// void sphere(SCEscene scene, char * attributes);
+	// void triangle(SCEscene scene, char * attributes);
+	// void include(SCEscene scene, char * attributes);
 	void parseSCE(char *infile);
 
 	//getline: input text file -> one line

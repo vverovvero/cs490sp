@@ -156,8 +156,76 @@ void SCEscene::print_scene(){
 // Parse
 ////////////////////
 
-void Parse::camera(SCEscene scene, char * attributes){
-	
+//http://stackoverflow.com/questions/122616/how-do-i-trim-leading-trailing-whitespace-in-a-standard-way
+char *trimwhitespace(char *str)
+{
+  if(str == NULL){
+  	return str;
+  }
+
+  char *end;
+
+  // Trim leading space
+  while(isspace((unsigned char)*str)) str++;
+
+  if(*str == 0)  // All spaces?
+    return str;
+
+  // Trim trailing space
+  end = str + strlen(str) - 1;
+  while(end > str && isspace((unsigned char)*end)) end--;
+
+  // Write new null terminator
+  *(end+1) = 0;
+
+  return str;
+}
+
+//fill the attrList and attrMap
+void Parse::getAttrs(char * attributes){
+	// printf("Will parse attributes: %s\n", attributes);
+
+	const char left_paren[2] = "(";
+	const char right_paren[2] = ")";
+	char *token;
+	char *args;
+
+	/* get the first token */
+	token = strtok(attributes, left_paren);
+
+	/* walk through other tokens */
+	while( token != NULL ) 
+	{
+	  token = trimwhitespace(token);
+	  // printf( "token: %s\n", token );
+
+	  //get the args
+	  args = strtok(NULL, right_paren);
+	  args = trimwhitespace(args);
+	  // printf("skip: %s\n", args);
+	  
+	  //update list and map
+	  if(args != NULL){
+	  	this->attrList.push_back(token);
+	  	this->attrMap[token] = args;
+	  }
+
+	  token = strtok(NULL, left_paren);
+	}
+}
+
+void Parse::flushAttrs(){
+	this->attrList.clear();
+	this->attrMap.clear();
+}
+
+void Parse::printAttrs(){
+	printf("attrs=================\n");
+	int n_attrList = attrList.size();
+	for(int i=0; i<n_attrList; i++){
+		char *token = this->attrList[i];
+		printf("%s: %s\n", token, this->attrMap[token]);
+	}
 }
 
 //http://stackoverflow.com/questions/19724450/c-language-how-to-get-the-remaining-string-after-using-strtok-once
@@ -177,6 +245,7 @@ void Parse::parseSCE(char * infile){
 			// printf("first part: '%s'\nsecond part: '%s'\n", line, attributes + 1);
 
 			//Get attribute list
+			Parse::getAttrs(attributes + 1);
 			//match by keyword and call appropriate function
 			if(strcmp(line, "CAMERA") == 0){
 				printf("CAMERA\n");
@@ -202,9 +271,11 @@ void Parse::parseSCE(char * infile){
 			else{
 				fprintf(stderr, "Invalid keyword: %s\n", line);
 			}
+			//Clear attr list
+			Parse::printAttrs();
+			Parse::flushAttrs();
 		}
     }
-
     fclose(file);
 }
 

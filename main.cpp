@@ -19,7 +19,7 @@
 
 /***************************** Headers and Structs *******************************/
 
-// #include "main.h"
+#include "main.h"
 #include "SCEparser.h"
 
 /***************************** Forward declarations *******************************/
@@ -400,13 +400,50 @@ void tone_map(float* img, int size){
 
 int main (){
 
-  #include "simple.h"
+  // #include "simple.h"
+
+  vec3 cam_point = {.x=50.0, .y=50.0, .z=400.0};
+  vec3 cam_toPoint = {.x=50.0, .y=50.0, .z=0.0};
+  vec3 light_point = {.x=50.0, .y=95.5, .z=50.0};
+  vec3 light_color = {.x=155.0, .y=155.0, .z=155.0};
+  vec3 mat0_color = {.x=255.0, .y=255.0, .z=255.0};
+  vec3 mat1_color = {.x=255.0, .y=90.0, .z=90.0};
+  vec3 sphere_point = {.x=50.0, .y=25.0, .z=50.0};
+  vec3 tri0_p1 = {.x=0.0, .y=0.0, .z=0.0};
+  vec3 tri0_p2 = {.x=0.0, .y=0.0, .z=100.0};
+  vec3 tri0_p3 = {.x=100.0, .y=0.0, .z=100.0};
+  vec3 tri1_p1 = {.x=100.0, .y=0.0, .z=100.0};
+  vec3 tri1_p2 = {.x=100.0, .y=0.0, .z=0.0};
+  vec3 tri1_p3 = {.x=0.0, .y=0.0, .z=0.0};
+
+   SCEscene scene = SCEscene();
+   scene.add_camera(cam_point, cam_toPoint, 40, UP);
+   scene.add_light(OMNI, light_point, light_color);
+   scene.add_material(mat0_color, ORIGINAL, 0, 0.0, 0.9, 0.05, 0.0);
+   scene.add_material(mat1_color, ORIGINAL, 0, 0.0, 0.9, 0.1, 0.0);
+   scene.add_sphere(sphere_point, 25.0, 1);
+   scene.add_triangle(tri0_p1, tri0_p2, tri0_p3, 0);
+   scene.add_triangle(tri1_p1, tri1_p2, tri1_p3, 0);
+
+   scene.build_scene();
+
+   printf("Sanity check the scene\n");
+   scene.print_scene();
+
+  //load scene via a function
+  Scene * s_scene_ptr;
+  s_scene_ptr = (Scene *) malloc(sizeof(struct Scene));
+  s_scene_ptr = scene.get_scene();
 
   //initalize random number generator
   srand48(time(NULL));
 
   // This is MALLOCED!!
-  float* img = render(&s_scene);
+  // float* img = render(&s_scene);
+
+  printf("Getting the scene pointer\n");
+  float* img = render(s_scene_ptr);
+  
 
   tone_map(img, HEIGHT * WIDTH * 4);
 

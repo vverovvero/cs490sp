@@ -69,10 +69,11 @@ Acceleration structure:
 Could be like tuples <sphere, matindex>
 
 +make very simple scene of one sphere and two tris
--change Triangle struct and Sphere struct to hold a material index
--change static arrays to be lists?
--try mallocing and freeing it in a test function
--render this very simple scene
++change Triangle struct and Sphere struct to hold a material index
++change static arrays to be vectors? cpp implementation is just an array that can dynamically grow
++render this very simple scene
++simple scene works from SCEscene class
+-Parse from sce file
 -if it all works well, then continue building SCEparser
 
 

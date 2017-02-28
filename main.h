@@ -14,6 +14,9 @@
 
 #include "vec3.h"
 
+#include <vector>
+
+using std::vector;
 
 
 #define HEIGHT 512
@@ -76,9 +79,9 @@ typedef struct Ray{
 //Fill in SceneStruct later
 typedef struct Scene{
   Camera* camera;
-  Material* materials;
-  Object* objects;
-  Light* lights;
+  vector<Material> materials;
+  vector<Object> objects;
+  vector<Light> lights;
   int n_lights;
   int n_objects;
   int n_materials;

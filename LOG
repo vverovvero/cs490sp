@@ -74,6 +74,7 @@ Could be like tuples <sphere, matindex>
 +render this very simple scene
 +simple scene works from SCEscene class
 -Parse from sce file
+-regex in C : would you use PCRE?
 -if it all works well, then continue building SCEparser
 
 

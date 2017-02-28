@@ -12,6 +12,8 @@
 #include "main.h"
 #include "vec3.h"
 
+#include <stdio.h>
+
 #include <vector>
 #include <unordered_map>
 
@@ -20,6 +22,7 @@ using std::vector;
 using std::unordered_map;
 
 Scene* test(void);
+
 
 /************************************/
 /*   Scene Object (Intermediate)    */
@@ -66,13 +69,26 @@ public:
 class Parse
 {
 private:
-	//
+	//unordered map for attributes, flush after each use
 public:
 	//do we need attribute parsing functions?
 
 	//when SCEscene object is made, can call this
 	// struct Scene * writeH(SCEscene scene, char * h_name);
-	// void parse(char *infile);
+	void camera(SCEscene scene, char * attributes);
+	void light(SCEscene scene, char * attributes);
+	void material(SCEscene scene, char * attributes);
+	void sphere(SCEscene scene, char * attributes);
+	void triangle(SCEscene scene, char * attributes);
+	void include(SCEscene scene, char * attributes);
+	void parseSCE(char *infile);
+
+	//getline: input text file -> one line
+	//parse getPrimitive : one line -> identify primitive and call with remainder of line
+	//get attributes: remainder of line -> tokenize into an unordered map
+	//makePrimitive: unordered map of attributes -> adding primitive to the scene
+
+
 };
 
 

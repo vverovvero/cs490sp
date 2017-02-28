@@ -7,13 +7,9 @@
 #include <iostream>
 #include <stdlib.h> //has exit, EXIT_FAILURE
 
-// vector<struct Camera> cameras;
-// vector<struct Light> lights;
-// vector<struct Material> materials;
-// vector<struct Sphere> spheres;
-// vector<struct Triangle> triangles;
-// vector<struct Object> objects;
-// Scene s_scene;
+/////////////////////
+// SCEscene
+////////////////////
 
 SCEscene::SCEscene():n_spheres(0), n_triangles(0){}
 
@@ -156,19 +152,64 @@ void SCEscene::print_scene(){
 }
 
 
+/////////////////////
+// Parse
+////////////////////
+
+void Parse::camera(SCEscene scene, char * attributes){
+	
+}
+
+//http://stackoverflow.com/questions/19724450/c-language-how-to-get-the-remaining-string-after-using-strtok-once
+void Parse::parseSCE(char * infile){
+    FILE* file = fopen(infile, "r"); 
+    char line[256];
+
+    while (fgets(line, sizeof(line), file)) {
+        // printf("%s", line); 
+        //Get first token
+		const char delimiter = ' ';
+		char *attributes;
+		attributes = strchr(line, delimiter);
+
+		if(attributes != NULL){
+			*attributes = '\0'; /* overwrite first separator, creating two strings. */
+			// printf("first part: '%s'\nsecond part: '%s'\n", line, attributes + 1);
+
+			//Get attribute list
+			//match by keyword and call appropriate function
+			if(strcmp(line, "CAMERA") == 0){
+				printf("CAMERA\n");
+			}
+			else if(strcmp(line, "LIGHT") == 0){
+				printf("LIGHT\n");
+			}
+			else if(strcmp(line, "MATERIAL") == 0){
+				printf("MATERIAL\n");
+			}
+			else if(strcmp(line, "SPHERE") == 0){
+				printf("SPHERE\n");
+			}
+			else if(strcmp(line, "TRIANGLE") == 0){
+				printf("TRIANGLE\n");
+			}
+			else if(strcmp(line, "INCLUDE") == 0){
+				printf("INCLUDE\n");
+			}
+			else if(strncmp(line, "#", 1) == 0){
+				continue;
+			}
+			else{
+				fprintf(stderr, "Invalid keyword: %s\n", line);
+			}
+		}
+    }
+
+    fclose(file);
+}
 
 /////////////////////
-
-// #include <sstream>
-// #include <string>
-
-// void Parse::parse(char * infile){
-// 	while(std::getline(infile, line)){
-// 		std::istringstream iss(line);
-// 	}
-
-// }
-
+// Testing
 ////////////////////
 
 // vec3 cam_point = {.x=50.0, .y=50.0, .z=400.0};

@@ -6,6 +6,7 @@
 
 #include <iostream>
 #include <stdlib.h> //has exit, EXIT_FAILURE
+#include <errno.h>
 
 /////////////////////
 // SCEscene
@@ -156,6 +157,20 @@ void SCEscene::print_scene(){
 // Parse
 ////////////////////
 
+Parse::Parse(){
+	//initialize toLightType hash
+	char omni[5] = "OMNI";
+	char spot[5] = "SPOT";
+	toLightType[omni] = OMNI;
+	toLightType[spot] = SPOT;
+
+	//initialize toMaterialType hash
+	char phong[6] = "PHONG";
+	char original[9] = "ORIGINAL";
+	toMaterialType[phong] = PHONG;
+	toMaterialType[original] = ORIGINAL;
+}
+
 //http://stackoverflow.com/questions/122616/how-do-i-trim-leading-trailing-whitespace-in-a-standard-way
 char *trimwhitespace(char *str)
 {
@@ -228,6 +243,92 @@ void Parse::printAttrs(){
 	}
 }
 
+//int is_int(char *var)
+//int is_float(char *var)
+
+void Parse::convertTypeArg(char * var){
+	//Is it an int?
+	errno = 0;
+	int res = (int) strtol(var, NULL, 10);
+	if(errno == 0){
+		//update tuple
+		boost::get<0>(this->argConvert) = 1;
+    	boost::get<1>(this->argConvert) = res;
+		return;
+	}
+
+	//Is it a float
+	errno = 0;
+	float resf = strtof(var, NULL);
+	if(errno == 0){
+		boost::get<0>(this->argConvert) = 2;
+    	boost::get<2>(this->argConvert) = resf;
+    	return;
+	}
+
+	//Is it a lightType?
+	auto light_enum = this->toLightType.find(var);
+    if(light_enum != this->toLightType.end()) {
+        //update tuple; first set the index
+       	boost::get<0>(this->argConvert) = 3;
+       	//grab the search field from result and store at index
+       	boost::get<3>(this->argConvert) = light_enum->second;
+        return;
+    }
+    //Is it a materialType?
+    auto mat_enum = this->toMaterialType.find(var);
+    if(mat_enum != this->toMaterialType.end()){
+    	//update tuple; set index
+    	boost::get<0>(this->argConvert) = 4;
+    	boost::get<4>(this->argConvert) = mat_enum->second;
+    	return;
+    }
+
+}
+
+// void Parse::printArgConvert();
+
+//given token in attrMap, put args in argList
+void Parse::getArgs(char * attr){
+	char * args = this->attrMap[attr];
+	const char comma[2] = ",";
+	char *arg;
+
+	// printf("attr: %s\n", attr);
+	// printf("args: %s\n", args);
+
+	/* get the first token */
+	arg = strtok(args, comma);
+
+	/* walk through other tokens */
+	while( arg != NULL ) 
+	{
+	  arg = trimwhitespace(arg);
+	  // printf("arg: %s\n", arg);
+	 
+	  //update
+	  this->argList.push_back(arg);
+
+	  //test
+	  Parse::convertTypeArg(arg);
+
+	  arg = strtok(NULL, comma);
+	}
+} 
+
+//flush argsList after use
+void Parse::flushArgs(){
+	this->argList.clear();
+}
+
+void Parse::printArgs(){
+	printf("arguments: ==============\n");
+	int n_args = this->argList.size();
+	for(int i=0; i<n_args; i++){
+		printf("%s\n", this->argList[i]);
+	}
+}
+
 //http://stackoverflow.com/questions/19724450/c-language-how-to-get-the-remaining-string-after-using-strtok-once
 void Parse::parseSCE(char * infile){
     FILE* file = fopen(infile, "r"); 
@@ -249,6 +350,13 @@ void Parse::parseSCE(char * infile){
 			//match by keyword and call appropriate function
 			if(strcmp(line, "CAMERA") == 0){
 				printf("CAMERA\n");
+				//test
+				int n_attrs = this->attrList.size();
+				for(int i=0; i<n_attrs; i++){
+					Parse::getArgs(attrList[i]);
+					Parse::printArgs();
+					Parse::flushArgs();
+				}
 			}
 			else if(strcmp(line, "LIGHT") == 0){
 				printf("LIGHT\n");

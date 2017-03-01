@@ -76,6 +76,15 @@ Could be like tuples <sphere, matindex>
 -Parse from sce file
 -regex in C : would you use PCRE?
 -if it all works well, then continue building SCEparser
+======
+*Main idea is to take argList and convert it into correct parameter of correct type
+ie. [200, 5, 3] -> vec3
+ie. UP -> vec3
+ie. "SPOT" -> lightType
+etc
 
+-void convertArgList(); //new
+	void printConvertedArgList(); //new
 
+-toVec3 Map
 

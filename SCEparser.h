@@ -16,10 +16,11 @@
 
 #include <vector>
 #include <unordered_map>
-
+#include "boost/tuple/tuple.hpp"
 
 using std::vector;
 using std::unordered_map;
+using boost::tuple;
 
 Scene* test(void);
 
@@ -69,18 +70,50 @@ public:
 class Parse
 {
 private:
+	//unordered map from string to lightType
+	unordered_map<char *, lightType> toLightType;
+	//unordered map from string to materialType
+	unordered_map<char *, materialType> toMaterialType;
+	//unordered map from string to vec3
+	unordered_map<char *, vec3> toVec3;
+
 	//unordered map for attributes, flush after each use
 	vector<char *> attrList; //keep track of insertion order of attrs
 	unordered_map<char *, char *> attrMap; //keep for look up of attr -> args
+
+	//list for args for each attr: 
+	vector<char *> argList;
+	//need to convert: should be tuple of different fields?
+	// first int is index into tuple for argument
+	// char * -> int 
+	// char * -> float
+	// char * -> lightType
+	// char * -> materialType
+	// char * -> vector (ie. UP, or a list of size 3)
+	tuple<int, int, float, lightType, materialType, vec3> argConvert; //no need to flush
+
 public:
+	Parse();
 	//do we need attribute parsing functions?
 
 	//when SCEscene object is made, can call this
 	// struct Scene * writeH(SCEscene scene, char * h_name);
 	void getAttrs(char * attributes); //for filling attrList, attrMap
 	void flushAttrs(); //flush attrList and attrMap after use
-
 	void printAttrs(); //print attrList and attrMap
+
+	void getArgs(char * attr); //given token in attrMap, put args in argList
+	void flushArgs(); //flush argsList after use
+	void printArgs(); //print argList
+
+	void convertTypeArg(char * var);
+	void printArgConvert();
+	void convertArgList(); //new
+	void printConvertedArgList(); //new
+
+	//isVec() need to check a list of 3 ints and say it's a vector
+
+	
 
 	// void camera(SCEscene scene, char * attributes);
 	// void light(SCEscene scene, char * attributes);

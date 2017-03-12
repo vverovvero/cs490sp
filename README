@@ -42,14 +42,19 @@ The output of this program is a .png that shows the rendered scene.
 /*********************** Scene files *******************************/
 ---------------------------------------------------------------------
 
-This path tracer accepts scene information in the form of a .h header file.
-To generate a .h header file, use the TXTparser.py script.  [to be written]
+This path tracer accepts scene information in a two-pass workflow.
+The user specifies a text file (sce file), which is parsed into a binary.
+The program accepts the binary and renders the scene.
+
+.sce -> binary 	SCEparser.py
+binary -> image  main.cpp
 
 For more complicated geometry, the general workflow is:
 
 .obj -> .txt 	OBJparser.py
 .txt -> .sce 	TXTparser.py
-.sce -> .h 		SCEparser.py
+.sce -> binary 		SCEparser.py
+binary -> image		main.cpp
 
 OBJparser.py:
 python ./OBJparser.py <input_obj_file> <output_txt_file>
@@ -64,8 +69,9 @@ TXTparser takes a txt file of vertex and index array.  These txt files must be p
 TXTparser generates .sce files, where the mesh consists only of TRIANGLE primitives.
 No material is associated with the mesh.
 
-
-SCEparser.py will produce a .h file that contains structs for triangles, spheres, lights, materials, objects...
+SCEparser.py
+python ./SCEparser.py <input_sce_file> <output_binary_file>
+SCEparser.py will produce a binary file that contains structs for triangles, spheres, lights, materials, objects...
 For geometry, it can handle sphere and triangle primitives.
 It also handles light primitives, material primitives, and object array primitive.
 
@@ -75,6 +81,11 @@ CAMERA, LIGHT, MATERIAL, SPHERE, TRIANGLE, INCLUDE
 Important: Material Indices begin at 0!  User must keep this in mind when specifying TRIANGLE or SPHERE primitives
 Important: Any scene file must contain a camera
 Important: INCLUDE cannot contain nested INCLUDEs
+-INCLUDE only supports geometry (SPHERE, TRIANGLE)
+-Transformations supported for SPHERE: Translate(x, y, z), ScaleR(s), RotateX(a), RotateY(a), RotateZ(a)
+-Transformations supported for TRIANGLE: Translate(x, y, z), Scale(x, y, z), RotateX(a), RotateY(a), RotateZ(a)
+
+
 
 ---------------------------------------------------------------------
 /*********************** Acceleration ******************************/

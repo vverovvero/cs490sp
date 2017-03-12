@@ -95,7 +95,7 @@ private:
 	tuple<int, int, float, lightType, materialType, vec3> argConvert; //no need to flush
 
 	//unordered map for each SCEscene function
-	unordered_map<char *, argType> toCameraArgTypes; //so we know what each attr needs to be ocnverted to
+	unordered_map<char *, int> toCameraArgTypes; //so we know what each attr needs to be ocnverted to
 	tuple<vec3, vec3, float, vec3> toCameraArgs;
 
 
@@ -118,7 +118,7 @@ public:
 	// void convertArgList(); //new
 	// void printConvertedArgList(); //new
 
-	argType getArgType(unordered_map<char *, argType> primitiveMap, char * attribute);
+	int getArgType(unordered_map<char *, int> primitiveMap, char * attribute);
 	void convertTypeArg(argType convertType);
 
 	//isVec() need to check a list of 3 ints and say it's a vector

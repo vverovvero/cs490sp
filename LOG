@@ -97,6 +97,19 @@ etc
 
 
 TO DO================
+How to fix parsing:
+Ideal: 
+-YAML scene description
+-python parser gives dictionary
+-python parser gives binary file
+-C++ opens serialized binary file and parses
+
+What I should do:
+-fix/extend python parser so that transformations are handled
+-python parser gives serialized binary file
+-c++ opens serialized binary file, parses, and builds scene
+
+===================
 -fix parsing
 -add acceleration
 -add materials

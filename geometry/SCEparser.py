@@ -9,15 +9,24 @@
 # ie. <light instance> = {'type': 'OMNI', 'point': (50, 50, 50), 'color': (255, 255, 125)}
 
 # remember that material indices start at 0!
+# Angles are specified in degrees, so we must convert to Radians when parsing
+# INCLUDE only supports spheres and triangles in the mesh
+# Supported transforms are Translate(x, y, z), ScaleR(s), Scale(x, y, z),  RotateX(a), RotateY(a), RotateZ(a)
+
+# Sources:
+# http://stackoverflow.com/questions/642154/how-to-convert-strings-into-integers-in-python
+# http://stackoverflow.com/questions/14607640/rotating-a-vector-in-3d-space
 
 ############################################################################################
 
 # TO DO
 # add support for transformations (Translate, Rotate, Scale)
 # add support for INCLUDE flag
+# update README
 
 import re
 import sys
+import math
 
 print 'Number of arguments:', len(sys.argv), 'arguments.'
 print 'Argument List:', str(sys.argv)
@@ -235,6 +244,12 @@ def writeH(scene, h_name):
 
 
 #################################
+# Scene -> binary file
+#################################
+
+def writeB(scene, b_name): print "hi"
+
+#################################
 # .sce file -> Scene
 #################################
 
@@ -359,8 +374,9 @@ class Parser(object):
 		scene.add_material(mat_args["Color"], mat_args["Type"], mat_args["Metal"], mat_args["Specular"], mat_args["Lambert"],
 			mat_args["Ambient"], mat_args["Exponent"])
 
-	def sphere(self, scene, attributes, defaultMaterial, defaultTranslate, defaultRotate, defaultScale):
+	def sphere(self, scene, attributes, defaultMaterial, defaultTransforms):
 		sphere_args = dict()
+		sphere_transforms = list()
 		for attribute in attributes:
 			(function, args_list) = getAttr(attribute)
 			if function == "Point":
@@ -370,19 +386,61 @@ class Parser(object):
 			elif function == "Material":
 				sphere_args["Material"] = args_list[0]
 			elif function == "Translate":
-				pass
-			elif function == "Rotate":
-				pass
-			elif function == "Scale":
-				pass
+				sphere_transforms.append(("Translate", (args_list[0], args_list[1], args_list[2])))
+			elif function == "ScaleR":
+				sphere_transforms.append(("ScaleR", args_list[0]))
+			elif function == "RotateX":
+				sphere_transforms.append(("RotateX", args_list[0]))
+			elif function == "RotateY":
+				sphere_transforms.append(("RotateY", args_list[0]))
+			elif function == "RotateZ":
+				sphere_transforms.append(("RotateZ", args_list[0]))
 			else:
 				print "Invalid Sphere attribute: " + function	
 		if defaultMaterial:
-			sphere_args["Material"] = defaultMaterial		
+			sphere_args["Material"] = defaultMaterial
+		#Override sphere_transforms if default transforms
+		if defaultTransforms:
+			sphere_transforms = defaultTransforms
+		#apply transforms
+		if sphere_transforms:
+			for sphere_transform in sphere_transforms:
+				#fetch sphere point
+				(x,y,z) = sphere_args["Point"]
+				#apply transform
+				(transform, args) = sphere_transform
+				if transform == "Translate":
+					(xt, yt, zt) = args
+					sphere_args["Point"] = (x+xt, y+yt, z+zt)
+				elif transform == "ScaleR":
+					s = args 
+					r = sphere_args["Radius"]
+					sphere_args["Radius"] = r*s
+				elif transform == "RotateX":
+					a = args 
+					X = x*math.cos(math.radians(a)) - y*math.sin(math.radians(a))
+					Y = x*math.sin(math.radians(a)) + y*math.cos(math.radians(a))
+					Z = z
+					sphere_args["Point"] = (X, Y, Z)
+				elif transform == "RotateY":
+					a = args
+					X = x*math.cos(math.radians(a)) + z*math.sin(math.radians(a))
+					Y = y
+					Z = -x*math.sin(math.radians(a)) + z*math.cos(math.radians(a))
+					sphere_args["Point"] = (X, Y, Z)
+				elif transform == "RotateZ":
+					a = args 
+					X = x
+					Y = y*math.cos(math.radians(a)) - z*math.sin(math.radians(a))
+					Z = y*math.sin(math.radians(a)) + z*math.cos(math.radians(a))
+					sphere_args["Point"] = (X, Y, Z)
+				else:
+					print "Invalid Transform: " + transform
 		scene.add_sphere(sphere_args["Point"], sphere_args["Radius"], sphere_args["Material"])
 
-	def triangle(self, scene, attributes, defaultMaterial, defaultTranslate, defaultRotate, defaultScale):
+	def triangle(self, scene, attributes, defaultMaterial, defaultTransforms):
 		tri_args = dict()
+		tri_transforms = list()
 		for attribute in attributes:
 			(function, args_list) = getAttr(attribute)
 			if function == "P1":
@@ -394,43 +452,62 @@ class Parser(object):
 			elif function == "Material":
 				tri_args["Material"] = args_list[0]
 			elif function == "Translate":
-				tri_args["Translate"] = (args_list[0], args_list[1], args_list[2])
-			elif function == "Rotate":
-				tri_args["Rotate"] = (args_list[0], args_list[1], args_list[2])
+				tri_transforms.append(("Translate", (args_list[0], args_list[1], args_list[2])))
 			elif function == "Scale":
-				tri_args["Scale"] = (args_list[0], args_list[1], args_list[2])
+				tri_transforms.append(("Scale", (args_list[0], args_list[1], args_list[2])))
+			elif function == "RotateX":
+				tri_transforms.append(("RotateX", args_list[0]))
+			elif function == "RotateY":
+				tri_transforms.append(("RotateY", args_list[0]))
+			elif function == "RotateZ":
+				tri_transforms.append(("RotateZ", args_list[0]))
 			else:
 				print "Invalid Triangle attribute: " + function
 		#override with defaults
 		if defaultMaterial:
 			tri_args["Material"] = defaultMaterial
-		if defaultTranslate:
-			tri_args["Translate"] = defaultTranslate
-		if defaultRotate:
-			tri_args["Rotate"] = defaultRotate
-		if defaultScale:
-			tri_args["Scale"] = defaultScale
-		#apply transformations
-		if tri_args.get("Scale", None) != None:
-			(sx, sy, sz) = tri_args["Scale"]
-			for key in ["P1", "P2", "P3"]:
-				(x, y, z) = tri_args[key]
-				tri_args[key] = (x*sx, y*sy, z*sz)
-		if tri_args.get("Translate", None) != None:
-			(tx, ty, tz) = tri_args["Translate"]
-			for key in ["P1", "P2", "P3"]:
-				(x, y, z) = tri_args[key]
-				tri_args[key] = (x+tx, y+ty, z+tz)
-		if tri_args.get("Rotate", None) != None:
-			pass
-		
+		#override tri_transforms with default transforms
+		if defaultTransforms:
+			tri_transforms = defaultTransforms
+		#apply transforms:
+		if tri_transforms:
+			for tri_transform in tri_transforms:
+				(transform, args) = tri_transform
+				#iterate through the points and apply
+				for key in ["P1", "P2", "P3"]:
+					(x, y, z) = tri_args[key]
+					if transform == "Translate":
+						(xt, yt, zt) = args
+						tri_args[key] = (x+xt, y+yt, z+zt)
+					elif transform == "Scale":
+						(xt, yt, zt) = args
+						tri_args[key] = (x*xt, y*yt, z*zt)
+					elif transform == "RotateX":
+						a = args
+						X = x*math.cos(math.radians(a)) - y*math.sin(math.radians(a))
+						Y = x*math.sin(math.radians(a)) + y*math.cos(math.radians(a))
+						Z = z
+						tri_args[key] = (X, Y, Z)
+					elif transform == "RotateY":
+						a = args
+						X = x*math.cos(math.radians(a)) + z*math.sin(math.radians(a))
+						Y = y
+						Z = -x*math.sin(math.radians(a)) + z*math.cos(math.radians(a))
+						tri_args[key] = (X, Y, Z)
+					elif transform == "RotateZ":
+						a = args
+						X = x
+						Y = y*math.cos(math.radians(a)) - z*math.sin(math.radians(a))
+						Z = y*math.sin(math.radians(a)) + z*math.cos(math.radians(a))
+						tri_args[key] = (X, Y, Z)
+					else:
+						print "Invalid Transform: " + transform
 		#add triangle to scene
 		scene.add_triangle(tri_args["P1"], tri_args["P2"], tri_args["P3"], tri_args["Material"])
 		
-
-
 	def include(self, scene, attributes):
 		inc_args = dict()
+		inc_transforms = list()
 		for attribute in attributes:
 			print getAttr(attribute)
 			(function, args_list) = getAttr(attribute)
@@ -439,11 +516,15 @@ class Parser(object):
 			elif function == "Material":
 				inc_args["Material"] = args_list[0]
 			elif function == "Translate":
-				inc_args["Translate"] = (args_list[0], args_list[1], args_list[2])
-			elif function == "Rotate":
-				inc_args["Rotate"] = (args_list[0], args_list[1], args_list[2])
+				inc_transforms.append(("Translate", (args_list[0], args_list[1], args_list[2])))
 			elif function == "Scale":
-				inc_args["Scale"] = (args_list[0], args_list[1], args_list[2])
+				inc_transforms.append(("Scale", (args_list[0], args_list[1], args_list[2])))
+			elif function == "RotateX":
+				inc_transforms.append(("RotateX", args_list[0]))
+			elif function == "RotateY":
+				inc_transforms.append(("RotateY", args_list[0]))
+			elif function == "RotateZ":
+				inc_transforms.append(("RotateZ", args_list[0]))
 			else:
 				print "Invalid Include attribute: " + function
 
@@ -454,21 +535,12 @@ class Parser(object):
 				tokens = line.split(' ', 1)
 				keyword = tokens[0]
 				attributes = getAttrList(tokens[1:])
-				if keyword == "CAMERA":
-					# print "CAMERA PARSER"
-					self.camera(scene, attributes)
-				elif keyword == "LIGHT":
-					# print "LIGHT PARSER"
-					self.light(scene, attributes)
-				elif keyword == "MATERIAL":
-					# print "MATERIAL PARSER"
-					self.material(scene, attributes)
-				elif keyword == "SPHERE":
+				if keyword == "SPHERE":
 					# print "SPHERE PARSER"
-					self.sphere(scene, attributes, inc_args["Material"], inc_args["Translate"], inc_args["Rotate"], inc_args["Scale"])
+					self.sphere(scene, attributes, inc_args["Material"], inc_transforms)
 				elif keyword == "TRIANGLE":
 					# print "TRIANGLE PARSER"
-					self.triangle(scene, attributes, inc_args["Material"], inc_args["Translate"], inc_args["Rotate"], inc_args["Scale"])
+					self.triangle(scene, attributes, inc_args["Material"], inc_transforms)
 				elif keyword == "\n":
 					pass
 				elif keyword[0] == "#":
@@ -504,10 +576,10 @@ def parseSCE(input_file):
 			Parse.material(scene, attributes)
 		elif keyword == "SPHERE":
 			# print "SPHERE PARSER"
-			Parse.sphere(scene, attributes, None, None, None, None)
+			Parse.sphere(scene, attributes, None, [])
 		elif keyword == "TRIANGLE":
 			# print "TRIANGLE PARSER"
-			Parse.triangle(scene, attributes, None, None, None, None)
+			Parse.triangle(scene, attributes, None, [])
 		elif keyword == "INCLUDE":
 			# print "INCLUDE PARSER"
 			Parse.include(scene, attributes)
@@ -519,10 +591,9 @@ def parseSCE(input_file):
 			print "Error Invalid Keyword: " + keyword
 	sce.close
 
-	#write scene object -> .h############
-	writeH(scene, sys.argv[2])
-
-
+	#write scene object -> binary############
+	# writeH(scene, sys.argv[2])
+	writeB(scene, sys.argv[2])
 
 ##############################################
 

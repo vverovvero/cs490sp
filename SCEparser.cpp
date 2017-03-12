@@ -184,10 +184,10 @@ Parse::Parse(){
 	char cam_lookat[7] = "LookAt";
 	char cam_fov[4] = "FOV";
 	char cam_up[3] = "Up"; 
-	toCameraArgTypes[cam_point] = VEC3;
-	toCameraArgTypes[cam_lookat] = VEC3;
-	toCameraArgTypes[cam_fov] = FLOAT;
-	toCameraArgTypes[cam_up] = VEC3;
+	toCameraArgTypes[cam_point] = 1;
+	toCameraArgTypes[cam_lookat] = 2;
+	toCameraArgTypes[cam_fov] = 3;
+	toCameraArgTypes[cam_up] = 4;
 
 }
 
@@ -264,9 +264,9 @@ void Parse::printAttrs(){
 }
 
 
-argType Parse::getArgType(unordered_map<char *, argType> primitiveMap, char * attribute){
+int Parse::getArgType(unordered_map<char *, int> primitiveMap, char * attribute){
 	printf("Getting type for attribute: %s\n", attribute);
-	argType convertType = primitiveMap[attribute];
+	int convertType = primitiveMap[attribute];
 	printf("convertType is %d\n", convertType);
 	return primitiveMap[attribute];
 }

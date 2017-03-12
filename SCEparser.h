@@ -65,6 +65,8 @@ public:
 };
 
 
+typedef enum {INT, FLOAT, LIGHTTYPE, MATERIALTYPE, VEC3} argType;
+
 //writeH takes Scene instance and creates struct
 //parser has functions to read sce text file and generate scene object
 class Parse
@@ -92,6 +94,11 @@ private:
 	// char * -> vector (ie. UP, or a list of size 3)
 	tuple<int, int, float, lightType, materialType, vec3> argConvert; //no need to flush
 
+	//unordered map for each SCEscene function
+	unordered_map<char *, argType> toCameraArgTypes; //so we know what each attr needs to be ocnverted to
+	tuple<vec3, vec3, float, vec3> toCameraArgs;
+
+
 public:
 	Parse();
 	//do we need attribute parsing functions?
@@ -106,10 +113,13 @@ public:
 	void flushArgs(); //flush argsList after use
 	void printArgs(); //print argList
 
-	void convertTypeArg(char * var);
-	void printArgConvert();
-	void convertArgList(); //new
-	void printConvertedArgList(); //new
+	// void convertTypeArg();
+	// void printArgConvert();
+	// void convertArgList(); //new
+	// void printConvertedArgList(); //new
+
+	argType getArgType(unordered_map<char *, argType> primitiveMap, char * attribute);
+	void convertTypeArg(argType convertType);
 
 	//isVec() need to check a list of 3 ints and say it's a vector
 

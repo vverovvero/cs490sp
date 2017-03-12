@@ -169,6 +169,26 @@ Parse::Parse(){
 	char original[9] = "ORIGINAL";
 	toMaterialType[phong] = PHONG;
 	toMaterialType[original] = ORIGINAL;
+
+	//initialize toVec3 hash
+	char up[3] = "UP";
+	char zero[5] = "ZERO";
+	char white[6] = "WHITE";
+	toVec3[up] = UP;
+	toVec3[zero] = ZERO;
+	toVec3[white] = WHITE;
+
+	//Initialize the primitiveType maps
+	//Initialize primitiveType map toCameraArgTypes
+	char cam_point[6] = "Point";
+	char cam_lookat[7] = "LookAt";
+	char cam_fov[4] = "FOV";
+	char cam_up[3] = "Up"; 
+	toCameraArgTypes[cam_point] = VEC3;
+	toCameraArgTypes[cam_lookat] = VEC3;
+	toCameraArgTypes[cam_fov] = FLOAT;
+	toCameraArgTypes[cam_up] = VEC3;
+
 }
 
 //http://stackoverflow.com/questions/122616/how-do-i-trim-leading-trailing-whitespace-in-a-standard-way
@@ -243,50 +263,91 @@ void Parse::printAttrs(){
 	}
 }
 
-//int is_int(char *var)
-//int is_float(char *var)
 
-void Parse::convertTypeArg(char * var){
-	//Is it an int?
-	errno = 0;
-	int res = (int) strtol(var, NULL, 10);
-	if(errno == 0){
-		//update tuple
-		boost::get<0>(this->argConvert) = 1;
-    	boost::get<1>(this->argConvert) = res;
-		return;
-	}
-
-	//Is it a float
-	errno = 0;
-	float resf = strtof(var, NULL);
-	if(errno == 0){
-		boost::get<0>(this->argConvert) = 2;
-    	boost::get<2>(this->argConvert) = resf;
-    	return;
-	}
-
-	//Is it a lightType?
-	auto light_enum = this->toLightType.find(var);
-    if(light_enum != this->toLightType.end()) {
-        //update tuple; first set the index
-       	boost::get<0>(this->argConvert) = 3;
-       	//grab the search field from result and store at index
-       	boost::get<3>(this->argConvert) = light_enum->second;
-        return;
-    }
-    //Is it a materialType?
-    auto mat_enum = this->toMaterialType.find(var);
-    if(mat_enum != this->toMaterialType.end()){
-    	//update tuple; set index
-    	boost::get<0>(this->argConvert) = 4;
-    	boost::get<4>(this->argConvert) = mat_enum->second;
-    	return;
-    }
-
+argType Parse::getArgType(unordered_map<char *, argType> primitiveMap, char * attribute){
+	printf("Getting type for attribute: %s\n", attribute);
+	argType convertType = primitiveMap[attribute];
+	printf("convertType is %d\n", convertType);
+	return primitiveMap[attribute];
 }
 
-// void Parse::printArgConvert();
+// void Parse::convertTypeArg(){
+// 	//Is it vec3?
+// 	if(this->argList.size() == 3){
+// 		printf("Converting to type vec3!\n");
+// 		float res[3];
+// 		for(int i=0; i<3; i++){
+// 			res[i] = strtof(argList[i], NULL);
+// 			if(errno != 0){
+// 				fprintf(stderr, "Parse: problem converting vec3");
+// 			}
+// 		}
+// 		boost::get<0>(this->argConvert) = 5;
+// 		boost::get<5>(this->argConvert) = {.x=res[0], .y=res[1], .z=res[2]};
+// 		return;
+// 	}
+
+// 	//All other conversion do not have 3 args
+// 	char *var = this->argList[0];
+
+// 	//Is it vec3? Macro?
+// 	auto vec_enum = this->toVec3.find(var);
+//     if(vec_enum != this->toVec3.end()) {
+//     	printf("Converting to type vec3!\n");
+//         //update tuple; first set the index
+//        	boost::get<0>(this->argConvert) = 5;
+//        	//grab the search field from result and store at index
+//        	boost::get<5>(this->argConvert) = vec_enum->second;
+//         return;
+//     }
+
+// 	//Is it an int?
+// 	errno = 0;
+// 	int res = (int) strtol(var, NULL, 10);
+// 	if(errno == 0){
+// 		printf("Converting to type int!\n");
+// 		//update tuple
+// 		boost::get<0>(this->argConvert) = 1;
+//     	boost::get<1>(this->argConvert) = res;
+// 		return;
+// 	}
+
+// 	//Is it a float
+// 	errno = 0;
+// 	float resf = strtof(var, NULL);
+// 	if(errno == 0){
+// 		printf("Converting to type float!\n");
+// 		boost::get<0>(this->argConvert) = 2;
+//     	boost::get<2>(this->argConvert) = resf;
+//     	return;
+// 	}
+
+// 	//Is it a lightType?
+// 	auto light_enum = this->toLightType.find(var);
+//     if(light_enum != this->toLightType.end()) {
+//     	printf("Converting to type lightType!\n");
+//         //update tuple; first set the index
+//        	boost::get<0>(this->argConvert) = 3;
+//        	//grab the search field from result and store at index
+//        	boost::get<3>(this->argConvert) = light_enum->second;
+//         return;
+//     }
+//     //Is it a materialType?
+//     auto mat_enum = this->toMaterialType.find(var);
+//     if(mat_enum != this->toMaterialType.end()){
+//     	printf("Converting to type materialType!\n");
+//     	//update tuple; set index
+//     	boost::get<0>(this->argConvert) = 4;
+//     	boost::get<4>(this->argConvert) = mat_enum->second;
+//     	return;
+//     }
+
+// }
+
+// void Parse::printArgConvert(){
+// 	int index = boost::get<0>(this->argConvert);
+// 	printf("ArgConvert stored at index: %d\n", index);
+// }
 
 //given token in attrMap, put args in argList
 void Parse::getArgs(char * attr){
@@ -310,7 +371,7 @@ void Parse::getArgs(char * attr){
 	  this->argList.push_back(arg);
 
 	  //test
-	  Parse::convertTypeArg(arg);
+	  // Parse::convertTypeArg(arg);
 
 	  arg = strtok(NULL, comma);
 	}
@@ -332,6 +393,12 @@ void Parse::printArgs(){
 //http://stackoverflow.com/questions/19724450/c-language-how-to-get-the-remaining-string-after-using-strtok-once
 void Parse::parseSCE(char * infile){
     FILE* file = fopen(infile, "r"); 
+
+    if(file == NULL){
+	    fprintf(stderr, "Failed to open file\n");
+	    return;
+	  }
+
     char line[256];
 
     while (fgets(line, sizeof(line), file)) {
@@ -355,6 +422,11 @@ void Parse::parseSCE(char * infile){
 				for(int i=0; i<n_attrs; i++){
 					Parse::getArgs(attrList[i]);
 					Parse::printArgs();
+
+					Parse::getArgType(toCameraArgTypes, attrList[i]);
+
+					// Parse::convertTypeArg();
+					// Parse::printArgConvert();
 					Parse::flushArgs();
 				}
 			}

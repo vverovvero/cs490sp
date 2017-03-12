@@ -13,6 +13,9 @@ referenced by index in the triangle structs
 -read in the geometry at run time instead
 -send progress report for next week
 
+3/8:
+-
+
 ---------------------------------------------------------------------
 /********************* Miscellaneous to do *************************/
 ---------------------------------------------------------------------
@@ -76,6 +79,10 @@ Could be like tuples <sphere, matindex>
 -Parse from sce file
 -regex in C : would you use PCRE?
 -if it all works well, then continue building SCEparser
+
+
+/********* 3/13: PARSE class  ******/
+
 ======
 *Main idea is to take argList and convert it into correct parameter of correct type
 ie. [200, 5, 3] -> vec3
@@ -87,4 +94,15 @@ etc
 	void printConvertedArgList(); //new
 
 -toVec3 Map
+
+
+TO DO================
+-fix parsing
+-add acceleration
+-add materials
+-add Direct MIS, etc
+-add UV mapping?
+
+
+
 

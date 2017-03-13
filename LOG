@@ -105,9 +105,28 @@ Ideal:
 -C++ opens serialized binary file and parses
 
 What I should do:
--fix/extend python parser so that transformations are handled
++fix/extend python parser so that transformations are handled
 -python parser gives serialized binary file
 -c++ opens serialized binary file, parses, and builds scene
+
+
+The format of the binary file is:
+-send camera
+-send light(s)
+-send material(s)
+-send sphere(s)
+-send triangle(s)
+-send END code
+
+-each is a command followed by args
+ie. CAM_CMD CAM_ARG_1 CAM_ARG_2 CAM_ARG_3 CAM_ARG_4
+
+The parser's job is to call the correct function based on the command, and unpack the arguments as the correct types
+each command is 1 byte
+each argument is spaced out every 4 bytes
+-enums are represented with an int, 1 byte
+-ints are 1 byte
+-floats take up all 4 bytes
 
 ===================
 -fix parsing

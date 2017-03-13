@@ -17,6 +17,11 @@
 # http://stackoverflow.com/questions/642154/how-to-convert-strings-into-integers-in-python
 # http://stackoverflow.com/questions/14607640/rotating-a-vector-in-3d-space
 
+# Dependencies:
+# bitstring module http://pythonhosted.org/bitstring/index.html
+#	 http://scott-griffiths.github.io/bitstring/
+# 	 easy_install bitstring
+
 ############################################################################################
 
 # TO DO
@@ -27,6 +32,8 @@
 import re
 import sys
 import math
+import bitstring
+from bitstring import BitArray, BitStream
 
 print 'Number of arguments:', len(sys.argv), 'arguments.'
 print 'Argument List:', str(sys.argv)
@@ -35,6 +42,18 @@ print 'Argument List:', str(sys.argv)
 #################################
 # Scene Object (Intermediate)
 #################################
+
+# Notes on conversions:
+
+# Camera Up vector is converted to (0, 1, 0)
+
+#lightType
+#0	OMNI
+#1	SPOT
+
+#materialType
+#0	ORIGINAL
+#1	PHONG
 
 class Scene(object):
 
@@ -111,143 +130,112 @@ class Scene(object):
 
 
 #################################
-# Scene -> .h file
-#################################
-
-def writeH(scene, h_name):
-	h_file = open(h_name, 'w+')
-	
-	#Camera###########################
-	#if no camera, error
-	if scene.n_cameras == 0:
-		print "Error: Scene needs a camera."
-		h_file.close
-		return
-	camera = scene.cameras[0]
-	if isinstance(camera['up'], basestring):
-		up = camera['up']
-	else:
-		up = "{\n\t\t.x = %ff,\n\t\t.y = %ff,\n\t\t.z = %ff\n\t},\n" % (camera['up'][0], camera['up'][1], camera['up'][2])
-	buf_camera = ("Camera s_camera = {\n"
-		    "\t.point = {\n\t\t.x = %ff,\n\t\t.y = %ff,\n\t\t.z = %ff\n\t},\n"
-			"\t.fieldOfView = %ff,\n"
-			"\t.toPoint = {\n\t\t.x = %ff,\n\t\t.y = %ff,\n\t\t.z = %ff\n\t},\n"
-			"\t.up = %s\n"
-			"};\n\n"
-		% (camera['point'][0], camera['point'][1], camera['point'][2], camera['fieldOfView'],
-			camera['toPoint'][0], camera['toPoint'][1], camera['toPoint'][2], up))
-	h_file.write(buf_camera)
-
-	#Lights###########################
-	buf_lights = "Light s_lights[%d] = {\n" % scene.n_lights
-	for i in range(scene.n_lights):
-		light = scene.lights[i]
-		buf_light = ("\t{\n"
-			"\t\t.type = %s,\n"
-			"\t\t.point = {\n\t\t\t.x = %ff,\n\t\t\t.y = %ff,\n\t\t\t.z = %ff\n\t\t},\n"
-			"\t\t.color = {\n\t\t\t.x = %ff,\n\t\t\t.y = %ff,\n\t\t\t.z = %ff\n\t\t}\n"
-			"\t},\n"
-			% (light['type'], light['point'][0], light['point'][1], light['point'][2], 
-				light['color'][0], light['color'][1], light['color'][2]))
-		buf_lights += buf_light
-	buf_lights += "};\n\n"
-	h_file.write(buf_lights)
-
-	#Materials########################
-	buf_mats = "Material s_materials[%d] = {\n" % scene.n_materials
-	for i in range(scene.n_materials):
-		mat = scene.materials[i]
-		buf_mat = ("\t{\n"
-			"\t\t.color = {\n\t\t\t.x = %ff,\n\t\t\t.y = %ff,\n\t\t\t.z = %ff\n\t\t},\n"
-			"\t\t.type = %s,\n"
-			"\t\t.metal = %d,\n"
-			"\t\t.specular = %ff,\n"
-			"\t\t.lambert = %ff,\n"
-			"\t\t.ambient = %ff,\n"
-			"\t\t.exponent = %ff,\n"
-			"\t},\n"
-			% (mat['color'][0], mat['color'][1], mat['color'][2], mat['type'],
-				mat['metal'], mat['specular'], mat['lambert'], mat['ambient'], mat['exponent']))
-		buf_mats += buf_mat
-	buf_mats += "};\n\n"
-	h_file.write(buf_mats)
-
-	#Spheres##########################
-	buf_spheres = "Sphere s_spheres[%d] = {\n" % scene.n_spheres
-	for i in range(scene.n_spheres):
-		sphere = scene.spheres[i]
-		buf_sphere = ("\t{\n"
-			"\t\t.point = {\n\t\t\t.x = %ff,\n\t\t\t.y = %ff,\n\t\t\t.z = %ff\n\t\t},\n"
-			"\t\t.radius = %ff\n"
-			"\t},\n"
-			% (sphere['point'][0], sphere['point'][1], sphere['point'][2], sphere['radius']))
-		buf_spheres += buf_sphere
-	buf_spheres += "};\n\n"
-	h_file.write(buf_spheres)
-
-	#Triangles########################
-	buf_tris = "Triangle s_triangles[%d] = {\n" % scene.n_triangles
-	for i in range(scene.n_triangles):
-		tri = scene.triangles[i]
-		buf_tri = ("\t{\n"
-			"\t\t.point1 = {\n\t\t\t.x = %ff,\n\t\t\t.y = %ff,\n\t\t\t.z = %ff\n\t\t},\n"
-			"\t\t.point2 = {\n\t\t\t.x = %ff,\n\t\t\t.y = %ff,\n\t\t\t.z = %ff\n\t\t},\n"
-			"\t\t.point3 = {\n\t\t\t.x = %ff,\n\t\t\t.y = %ff,\n\t\t\t.z = %ff\n\t\t}\n"
-			"\t},\n"
-			% (tri['point1'][0], tri['point1'][1], tri['point1'][2],
-				tri['point2'][0], tri['point2'][1], tri['point2'][2],
-				tri['point3'][0], tri['point3'][1], tri['point3'][2]))
-		buf_tris += buf_tri
-	buf_tris += "};\n\n"
-	h_file.write(buf_tris)
-
-	#Objects##########################
-	n_objects = scene.n_spheres + scene.n_triangles
-	buf_objs = "Object s_objects[%d] = {\n" % n_objects
-	#append spheres
-	for i in range(scene.n_spheres):
-		obj = scene.spheres[i]
-		buf_obj = ("\t{\n"
-			"\t\t.type = SPHERE,\n"
-			"\t\t.matIndex = %d,\n"
-			"\t\t.object = &(s_spheres[%d])\n"
-			"\t},\n"
-			% (obj['materialIndex'], i))
-		buf_objs += buf_obj
-	#append triangles
-	for i in range(scene.n_triangles):
-		obj = scene.triangles[i]
-		buf_obj = ("\t{\n"
-			"\t\t.type = TRIANGLE,\n"
-			"\t\t.matIndex = %d,\n"
-			"\t\t.object = &(s_triangles[%d])\n"
-			"\t},\n"
-			% (obj['materialIndex'], i))
-		buf_objs += buf_obj
-	buf_objs += "};\n\n"
-	h_file.write(buf_objs)
-
-	#Scene############################
-	buf_scene = ("Scene s_scene = {\n"
-		"\t.camera = &s_camera,\n"
-		"\t.materials = s_materials,\n"
-		"\t.objects = s_objects,\n"
-		"\t.lights = s_lights,\n"
-		"\t.n_lights = %d,\n"
-		"\t.n_materials = %d,\n"
-		"\t.n_objects = %d,\n"
-		"};\n"
-		% (scene.n_lights, scene.n_materials, scene.n_spheres + scene.n_triangles))
-	h_file.write(buf_scene)
-
-	h_file.close
-
-
-#################################
 # Scene -> binary file
 #################################
 
-def writeB(scene, b_name): print "hi"
+#Write a binary stream of 32-bits at a time (ints or floats)
+# The format of the binary file is:
+# -send camera
+# -send light(s)
+# -send material(s)
+# -send sphere(s)
+# -send triangle(s)
+# -send END code
+
+# -each is a command followed by args
+# ie. CAM_CMD CAM_ARG_1 CAM_ARG_2 CAM_ARG_3 CAM_ARG_4
+
+#Command codes:
+#0	Camera
+#1	Light
+#2	Material
+#3	Sphere
+#4 	Triangle
+
+#Parser in cpp needs: (F for FLOAT_32, I for INT_32)
+#CMD_CAM F_Px F_Py F_Pz F_Tx F_Ty F_Tz F_FOV F_Ux F_Uy F_Uz
+#CMD_LGT I_Type F_Px F_Py F_Pz F_Cx F_Cy F_Cz
+#CMD_MAT F_Cx F_Cy F_Cz I_Type I_Metal F_Spec F_Lam F_Amb F_exp
+#CMD_SPH F_Px F_Py F_Pz F_R	I_matIndex
+#CMD_TRI F_P1x F_P1y F_P1z F_P2x F_P2y F_P2z F_P3x F_P3y F_P3z I_matIndex
+
+#lightType
+#0	OMNI
+#1	SPOT
+
+#materialType
+#0	ORIGINAL
+#1	PHONG
+
+def writeB(scene, b_name): 
+	#Sanitization checks
+	#if no camera, error:
+	if scene.n_cameras == 0:
+		print "Error: Scene needs a camera."
+		return
+
+	#Create bitstring
+	s = BitArray()
+
+	#Camera
+	camera = scene.cameras[0]
+	t = BitArray()
+	t = bitstring.pack("10*float:32", 
+		camera['point'][0], camera['point'][1], camera['point'][2], 
+		camera['fieldOfView'],
+		camera['toPoint'][0], camera['toPoint'][1], camera['toPoint'][2], 
+		camera['up'][0], camera['up'][1], camera['up'][2])
+	# print t.unpack("10*float:32")
+	s = s + t
+
+	#Lights
+	for i in range(scene.n_lights):
+		light = scene.lights[i]
+		t = BitArray()
+		t = bitstring.pack("int:32, 6*float:32",
+			light['type'], 
+			light['point'][0], light['point'][1], light['point'][2], 
+			light['color'][0], light['color'][1], light['color'][2])
+		# print t.unpack("int:32, 6*float:32")
+		s = s + t
+
+	#Materials
+	for i in range(scene.n_materials):
+		mat = scene.materials[i]
+		t = BitArray()
+		t = bitstring.pack("3*float:32, 2*int:32, 4*float:32",
+			mat['color'][0], mat['color'][1], mat['color'][2], 
+			mat['type'], mat['metal'], 
+			mat['specular'], mat['lambert'], mat['ambient'], mat['exponent'])
+		# print t.unpack("3*float:32, 2*int:32, 4*float:32")
+		s = s + t
+
+	#Spheres
+	for i in range(scene.n_spheres):
+		sphere = scene.spheres[i]
+		t = BitArray()
+		t = bitstring.pack("4*float:32, int:32",
+			sphere['point'][0], sphere['point'][1], sphere['point'][2], sphere['radius'],
+			sphere['materialIndex'])
+		# print t.unpack("4*float:32, int:32")
+		s = s + t
+
+	#Triangles
+	#CMD_TRI F_P1x F_P1y F_P1z F_P2x F_P2y F_P2z F_P3x F_P3y F_P3z I_matIndex
+	for i in range(scene.n_triangles):
+		tri = scene.triangles[i]
+		t = BitArray()
+		t = bitstring.pack("9*float:32, int:32",
+			tri['point1'][0], tri['point1'][1], tri['point1'][2],
+			tri['point2'][0], tri['point2'][1], tri['point2'][2],
+			tri['point3'][0], tri['point3'][1], tri['point3'][2],
+			tri['materialIndex'])
+		# print t.unpack("9*float:32, int:32")
+		s = s + t
+
+	#Write to file
+	with open(b_name, "wb") as f:
+		s.tofile(f)
 
 #################################
 # .sce file -> Scene
@@ -312,7 +300,7 @@ def getAttr(attribute):
 		return (function, args_list)
 	return ()
 
-# CAMERA parsing object
+# Parsing object
 class Parser(object):
 
 	def __init__(self):
@@ -331,7 +319,16 @@ class Parser(object):
 			elif function == "FOV":
 				camera_args["FOV"] = args_list[0]
 			elif function == "Up":
-				camera_args["Up"] = args_list[0]
+				if len(args_list) == 3:
+					camera_args["Up"] = (args_list[0], args_list[1], args_list[2])
+				elif isinstance(args_list[0], basestring):
+					vector = args_list[0]
+					if vector == "UP":
+						camera_args["Up"] = (0, 1, 0)
+					else:
+						"Cannot interpret vector macro for camera Up attribute."
+				else:
+					print "Cannot interpret argument for camera Up attribute."
 			else:
 				print "Invalid Camera attribute: " + function
 		# print camera_args
@@ -342,7 +339,13 @@ class Parser(object):
 		for attribute in attributes:
 			(function, args_list) = getAttr(attribute)
 			if function == "Type":
-				light_args["Type"] = args_list[0]
+				type = args_list[0]
+				if type == "OMNI":
+					light_args["Type"] = 0
+				elif type == "SPOT":
+					light_args["Type"] = 1
+				else:
+					print "Unconverted light type: " + type
 			elif function == "Point":
 				light_args["Point"] = (args_list[0], args_list[1], args_list[2])
 			elif function == "Color":
@@ -358,7 +361,13 @@ class Parser(object):
 			if function == "Color":
 				mat_args["Color"] = (args_list[0], args_list[1], args_list[2])
 			elif function == "Type":
-				mat_args["Type"] = args_list[0]
+				type = args_list[0]
+				if type == "ORIGINAL":
+					mat_args["Type"] = 0
+				elif type == "PHONG":
+					mat_args["Type"] = 1
+				else:
+					print "Unconverted Material type: " + type
 			elif function == "Metal":
 				mat_args["Metal"] = args_list[0]
 			elif function == "Specular":
@@ -509,7 +518,7 @@ class Parser(object):
 		inc_args = dict()
 		inc_transforms = list()
 		for attribute in attributes:
-			print getAttr(attribute)
+			# print getAttr(attribute)
 			(function, args_list) = getAttr(attribute)
 			if function == "Mesh":
 				inc_args["Mesh"] = args_list[0]
@@ -592,7 +601,6 @@ def parseSCE(input_file):
 	sce.close
 
 	#write scene object -> binary############
-	# writeH(scene, sys.argv[2])
 	writeB(scene, sys.argv[2])
 
 ##############################################
@@ -600,26 +608,6 @@ def parseSCE(input_file):
 parseSCE(sys.argv[1])
 
 
-
-
-# Testing ####################################
-
-# scene = Scene()
-# scene.add_camera((0,0,0), (6,6,6), 60, 'UP')
-# scene.add_light('OMNI', (66, 66, 66), (125, 125, 125))
-# scene.add_light('SPOT', (42, 21, 93), (255, 255, 255))
-# scene.add_material((255, 120, 185), 'ORIGINAL', 0, 0.0, 0.85, 0.05, 0)
-# scene.add_sphere((1,2,3), 25, 1)
-# scene.add_triangle((1,2,3), (4,5,6), (7,8,9), 3)
-
-# # scene.print_cameras()
-# # scene.print_lights()
-# # scene.print_materials()
-# # scene.print_spheres()
-# # scene.print_triangles()
-
-
-# writeH(scene, 'test.h')
 
 
 

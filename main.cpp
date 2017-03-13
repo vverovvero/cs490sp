@@ -401,13 +401,14 @@ int main(int argc, char const *argv[])
     return -1;
   }
 
-  //Initialize Parser
+  // Initialize SCEscene and Parser
+  SCEscene scene = SCEscene();
   Parse parse = Parse();
 
   //Call parser
   char infile[50];
   strcpy(infile, argv[1]);
-  parse.parseSCE(infile);
+  parse.parseSCE(infile, scene);
 
   return 0;
 }

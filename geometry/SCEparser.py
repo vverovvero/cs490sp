@@ -151,6 +151,7 @@ class Scene(object):
 #2	Material
 #3	Sphere
 #4 	Triangle
+#5 	END
 
 #Parser in cpp needs: (F for FLOAT_32, I for INT_32)
 #CMD_CAM F_Px F_Py F_Pz F_Tx F_Ty F_Tz F_FOV F_Ux F_Uy F_Uz
@@ -185,7 +186,7 @@ def writeB(scene, b_name):
 		camera['fieldOfView'],
 		camera['toPoint'][0], camera['toPoint'][1], camera['toPoint'][2], 
 		camera['up'][0], camera['up'][1], camera['up'][2])
-	# print t.unpack("int:32, 10*float:32")
+	print t.unpack("int:32, 10*float:32")
 	s = s + t
 
 	#Lights
@@ -196,7 +197,7 @@ def writeB(scene, b_name):
 			light['type'], 
 			light['point'][0], light['point'][1], light['point'][2], 
 			light['color'][0], light['color'][1], light['color'][2])
-		# print t.unpack("2*int:32, 6*float:32")
+		print t.unpack("2*int:32, 6*float:32")
 		s = s + t
 
 	#Materials
@@ -207,7 +208,7 @@ def writeB(scene, b_name):
 			mat['color'][0], mat['color'][1], mat['color'][2], 
 			mat['type'], mat['metal'], 
 			mat['specular'], mat['lambert'], mat['ambient'], mat['exponent'])
-		# print t.unpack("int:32, 3*float:32, 2*int:32, 4*float:32")
+		print t.unpack("int:32, 3*float:32, 2*int:32, 4*float:32")
 		s = s + t
 
 	#Spheres
@@ -217,7 +218,7 @@ def writeB(scene, b_name):
 		t = bitstring.pack("int:32, 4*float:32, int:32", 3,
 			sphere['point'][0], sphere['point'][1], sphere['point'][2], sphere['radius'],
 			sphere['materialIndex'])
-		# print t.unpack("int:32, 4*float:32, int:32")
+		print t.unpack("int:32, 4*float:32, int:32")
 		s = s + t
 
 	#Triangles
@@ -229,8 +230,13 @@ def writeB(scene, b_name):
 			tri['point2'][0], tri['point2'][1], tri['point2'][2],
 			tri['point3'][0], tri['point3'][1], tri['point3'][2],
 			tri['materialIndex'])
-		# print t.unpack("int:32, 9*float:32, int:32")
+		print t.unpack("int:32, 9*float:32, int:32")
 		s = s + t
+
+	#Send end code
+	t = BitArray()
+	t = bitstring.pack("int:32", 5)
+	s = s + t
 
 	#Write to file
 	with open(b_name, "wb") as f:

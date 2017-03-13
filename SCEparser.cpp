@@ -2,6 +2,9 @@
 
 //Implements scene parser, as originally defined in SCEparser.py with some modifications.
 
+//Sources:
+//http://stackoverflow.com/questions/1856468/how-to-output-ieee-754-format-integer-as-a-float
+
 #include "SCEparser.h"
 
 #include <iostream>
@@ -67,7 +70,6 @@ void SCEscene::add_sphere(vec3 point, float radius, int matIndex){
 	obj->object = this->spheres[this->n_spheres - 1];
 
 	this->objects.push_back(*obj);
-
 }
 
 
@@ -159,351 +161,116 @@ void SCEscene::print_scene(){
 
 Parse::Parse(){
 	//initialize toLightType hash
-	char omni[5] = "OMNI";
-	char spot[5] = "SPOT";
-	toLightType[omni] = OMNI;
-	toLightType[spot] = SPOT;
+	toLightType[0] = OMNI;
+	toLightType[1] = SPOT;
 
 	//initialize toMaterialType hash
-	char phong[6] = "PHONG";
-	char original[9] = "ORIGINAL";
-	toMaterialType[phong] = PHONG;
-	toMaterialType[original] = ORIGINAL;
-
-	//initialize toVec3 hash
-	char up[3] = "UP";
-	char zero[5] = "ZERO";
-	char white[6] = "WHITE";
-	toVec3[up] = UP;
-	toVec3[zero] = ZERO;
-	toVec3[white] = WHITE;
-
-	//Initialize the primitiveType maps
-	//Initialize primitiveType map toCameraArgTypes
-	char cam_point[6] = "Point";
-	char cam_lookat[7] = "LookAt";
-	char cam_fov[4] = "FOV";
-	char cam_up[3] = "Up"; 
-	toCameraArgTypes[cam_point] = 1;
-	toCameraArgTypes[cam_lookat] = 2;
-	toCameraArgTypes[cam_fov] = 3;
-	toCameraArgTypes[cam_up] = 4;
-
+	toMaterialType[0] = ORIGINAL;
+	toMaterialType[1] = PHONG;
 }
 
-//http://stackoverflow.com/questions/122616/how-do-i-trim-leading-trailing-whitespace-in-a-standard-way
-char *trimwhitespace(char *str)
-{
-  if(str == NULL){
-  	return str;
-  }
+// #Command codes:
+// #0	Camera
+// #1	Light
+// #2	Material
+// #3	Sphere
+// #4 	Triangle
+// #5 	END
 
-  char *end;
+float IEEEInttoFloat(int value) {
+	union
+	{	
+	    unsigned long ul;
+	    float f;
+	} u;
 
-  // Trim leading space
-  while(isspace((unsigned char)*str)) str++;
-
-  if(*str == 0)  // All spaces?
-    return str;
-
-  // Trim trailing space
-  end = str + strlen(str) - 1;
-  while(end > str && isspace((unsigned char)*end)) end--;
-
-  // Write new null terminator
-  *(end+1) = 0;
-
-  return str;
+	u.ul = value;
+	return u.f;
 }
 
-//fill the attrList and attrMap
-void Parse::getAttrs(char * attributes){
-	// printf("Will parse attributes: %s\n", attributes);
 
-	const char left_paren[2] = "(";
-	const char right_paren[2] = ")";
-	char *token;
-	char *args;
-
-	/* get the first token */
-	token = strtok(attributes, left_paren);
-
-	/* walk through other tokens */
-	while( token != NULL ) 
-	{
-	  token = trimwhitespace(token);
-	  // printf( "token: %s\n", token );
-
-	  //get the args
-	  args = strtok(NULL, right_paren);
-	  args = trimwhitespace(args);
-	  // printf("skip: %s\n", args);
-	  
-	  //update list and map
-	  if(args != NULL){
-	  	this->attrList.push_back(token);
-	  	this->attrMap[token] = args;
-	  }
-
-	  token = strtok(NULL, left_paren);
+void Parse::parseSCE(char * infile, SCEscene scene){
+	FILE *f = fopen(infile, "rb");
+	if(f == NULL){
+		fprintf(stderr, "Unable to open input file\n");
+		return;
 	}
-}
 
-void Parse::flushAttrs(){
-	this->attrList.clear();
-	this->attrMap.clear();
-}
-
-void Parse::printAttrs(){
-	printf("attrs=================\n");
-	int n_attrList = attrList.size();
-	for(int i=0; i<n_attrList; i++){
-		char *token = this->attrList[i];
-		printf("%s: %s\n", token, this->attrMap[token]);
-	}
-}
+	int cmd;
 
 
-int Parse::getArgType(unordered_map<char *, int> primitiveMap, char * attribute){
-	printf("Getting type for attribute: %s\n", attribute);
-	int convertType = primitiveMap[attribute];
-	printf("convertType is %d\n", convertType);
-	return primitiveMap[attribute];
-}
+	printf("size of int: %lu\n", sizeof(int));
+	printf("size of float: %lu\n", sizeof(float));
+	printf("size of pointer: %lu\n", sizeof(float*));
 
-// void Parse::convertTypeArg(){
-// 	//Is it vec3?
-// 	if(this->argList.size() == 3){
-// 		printf("Converting to type vec3!\n");
-// 		float res[3];
-// 		for(int i=0; i<3; i++){
-// 			res[i] = strtof(argList[i], NULL);
-// 			if(errno != 0){
-// 				fprintf(stderr, "Parse: problem converting vec3");
-// 			}
-// 		}
-// 		boost::get<0>(this->argConvert) = 5;
-// 		boost::get<5>(this->argConvert) = {.x=res[0], .y=res[1], .z=res[2]};
-// 		return;
-// 	}
+	//check file size
+	fseek (f , 0 , SEEK_END);
+  	long lSize = ftell (f);
+  	rewind (f);
 
-// 	//All other conversion do not have 3 args
-// 	char *var = this->argList[0];
+  	float test_float = 50.0f;
+  	printf("On this system, 50.0f is rep as: 0x%08x\n", test_float);
 
-// 	//Is it vec3? Macro?
-// 	auto vec_enum = this->toVec3.find(var);
-//     if(vec_enum != this->toVec3.end()) {
-//     	printf("Converting to type vec3!\n");
-//         //update tuple; first set the index
-//        	boost::get<0>(this->argConvert) = 5;
-//        	//grab the search field from result and store at index
-//        	boost::get<5>(this->argConvert) = vec_enum->second;
-//         return;
-//     }
 
-// 	//Is it an int?
-// 	errno = 0;
-// 	int res = (int) strtol(var, NULL, 10);
-// 	if(errno == 0){
-// 		printf("Converting to type int!\n");
-// 		//update tuple
-// 		boost::get<0>(this->argConvert) = 1;
-//     	boost::get<1>(this->argConvert) = res;
-// 		return;
-// 	}
+  	printf("size of file: %lu\n", lSize);
 
-// 	//Is it a float
-// 	errno = 0;
-// 	float resf = strtof(var, NULL);
-// 	if(errno == 0){
-// 		printf("Converting to type float!\n");
-// 		boost::get<0>(this->argConvert) = 2;
-//     	boost::get<2>(this->argConvert) = resf;
-//     	return;
-// 	}
+	int retval;
+	while(( retval = fread(&cmd, 4, 1, f)) > 0){
+		
+		// Flip to correct for byte order
+		int swapped = ((cmd>>24)&0xff) | // move byte 3 to byte 0
+                    ((cmd<<8)&0xff0000) | // move byte 1 to byte 2
+                    ((cmd>>8)&0xff00) | // move byte 2 to byte 1
+                    ((cmd<<24)&0xff000000); // byte 0 to byte 3
+        printf("~~~~~~~~~~~~~~~~~~~~~~~~\n");
+		printf("0x%08x\n", swapped);
+		printf("%f\n", (float)swapped);
+		printf("%d\n", swapped);
 
-// 	//Is it a lightType?
-// 	auto light_enum = this->toLightType.find(var);
-//     if(light_enum != this->toLightType.end()) {
-//     	printf("Converting to type lightType!\n");
-//         //update tuple; first set the index
-//        	boost::get<0>(this->argConvert) = 3;
-//        	//grab the search field from result and store at index
-//        	boost::get<3>(this->argConvert) = light_enum->second;
-//         return;
-//     }
-//     //Is it a materialType?
-//     auto mat_enum = this->toMaterialType.find(var);
-//     if(mat_enum != this->toMaterialType.end()){
-//     	printf("Converting to type materialType!\n");
-//     	//update tuple; set index
-//     	boost::get<0>(this->argConvert) = 4;
-//     	boost::get<4>(this->argConvert) = mat_enum->second;
-//     	return;
-//     }
+		printf("++Float is: %f\n", IEEEInttoFloat(swapped));
 
-// }
-
-// void Parse::printArgConvert(){
-// 	int index = boost::get<0>(this->argConvert);
-// 	printf("ArgConvert stored at index: %d\n", index);
-// }
-
-//given token in attrMap, put args in argList
-void Parse::getArgs(char * attr){
-	char * args = this->attrMap[attr];
-	const char comma[2] = ",";
-	char *arg;
-
-	// printf("attr: %s\n", attr);
-	// printf("args: %s\n", args);
-
-	/* get the first token */
-	arg = strtok(args, comma);
-
-	/* walk through other tokens */
-	while( arg != NULL ) 
-	{
-	  arg = trimwhitespace(arg);
-	  // printf("arg: %s\n", arg);
-	 
-	  //update
-	  this->argList.push_back(arg);
-
-	  //test
-	  // Parse::convertTypeArg(arg);
-
-	  arg = strtok(NULL, comma);
-	}
-} 
-
-//flush argsList after use
-void Parse::flushArgs(){
-	this->argList.clear();
-}
-
-void Parse::printArgs(){
-	printf("arguments: ==============\n");
-	int n_args = this->argList.size();
-	for(int i=0; i<n_args; i++){
-		printf("%s\n", this->argList[i]);
-	}
-}
-
-//http://stackoverflow.com/questions/19724450/c-language-how-to-get-the-remaining-string-after-using-strtok-once
-void Parse::parseSCE(char * infile){
-    FILE* file = fopen(infile, "r"); 
-
-    if(file == NULL){
-	    fprintf(stderr, "Failed to open file\n");
-	    return;
-	  }
-
-    char line[256];
-
-    while (fgets(line, sizeof(line), file)) {
-        // printf("%s", line); 
-        //Get first token
-		const char delimiter = ' ';
-		char *attributes;
-		attributes = strchr(line, delimiter);
-
-		if(attributes != NULL){
-			*attributes = '\0'; /* overwrite first separator, creating two strings. */
-			// printf("first part: '%s'\nsecond part: '%s'\n", line, attributes + 1);
-
-			//Get attribute list
-			Parse::getAttrs(attributes + 1);
-			//match by keyword and call appropriate function
-			if(strcmp(line, "CAMERA") == 0){
-				printf("CAMERA\n");
-				//test
-				int n_attrs = this->attrList.size();
-				for(int i=0; i<n_attrs; i++){
-					Parse::getArgs(attrList[i]);
-					Parse::printArgs();
-
-					Parse::getArgType(toCameraArgTypes, attrList[i]);
-
-					// Parse::convertTypeArg();
-					// Parse::printArgConvert();
-					Parse::flushArgs();
-				}
-			}
-			else if(strcmp(line, "LIGHT") == 0){
-				printf("LIGHT\n");
-			}
-			else if(strcmp(line, "MATERIAL") == 0){
-				printf("MATERIAL\n");
-			}
-			else if(strcmp(line, "SPHERE") == 0){
-				printf("SPHERE\n");
-			}
-			else if(strcmp(line, "TRIANGLE") == 0){
-				printf("TRIANGLE\n");
-			}
-			else if(strcmp(line, "INCLUDE") == 0){
-				printf("INCLUDE\n");
-			}
-			else if(strncmp(line, "#", 1) == 0){
-				continue;
-			}
-			else{
-				fprintf(stderr, "Invalid keyword: %s\n", line);
-			}
-			//Clear attr list
-			Parse::printAttrs();
-			Parse::flushAttrs();
+		switch (swapped){
+			case 0:
+				printf("Adding Camera\n");
+				// for (int i=0; i<10; i++) {
+				// 	fread(&cmd, 4, 1, f);
+				// 	printf("float %d \n", cmd);
+				// }
+				fseek(f, 40, SEEK_CUR);
+				break;
+			case 1:
+				printf("Adding Light\n");
+				fseek(f, 28, SEEK_CUR);
+				break;
+			case 2:
+				printf("Adding Material\n");
+				fseek(f, 36, SEEK_CUR);
+				break;
+			case 3:
+				printf("Adding Sphere\n");
+				fseek(f, 20, SEEK_CUR);
+				break;
+			case 4:
+				printf("Adding Triangle\n");
+				fseek(f, 40, SEEK_CUR);
+				break;
+			case 5:
+				printf("Found END\n");
+				break;
+			default:
+				printf("Invalid cmd\n");
 		}
-    }
-    fclose(file);
+
+		// printf("cmd = %d\n", cmd);
+
+		if(cmd == 5){
+			break;
+		}
+		else{
+			continue;
+		}
+		
+	}
+
+	fclose(f);
 }
-
-/////////////////////
-// Testing
-////////////////////
-
-// vec3 cam_point = {.x=50.0, .y=50.0, .z=400.0};
-// vec3 cam_toPoint = {.x=50.0, .y=50.0, .z=0.0};
-// vec3 light_point = {.x=50.0, .y=95.5, .z=50.0};
-// vec3 light_color = {.x=155.0, .y=155.0, .z=155.0};
-// vec3 mat0_color = {.x=255.0, .y=255.0, .z=255.0};
-// vec3 mat1_color = {.x=255.0, .y=90.0, .z=90.0};
-// vec3 sphere_point = {.x=50.0, .y=25.0, .z=50.0};
-// vec3 tri0_p1 = {.x=0.0, .y=0.0, .z=0.0};
-// vec3 tri0_p2 = {.x=0.0, .y=0.0, .z=100.0};
-// vec3 tri0_p3 = {.x=100.0, .y=0.0, .z=100.0};
-// vec3 tri1_p1 = {.x=100.0, .y=0.0, .z=100.0};
-// vec3 tri1_p2 = {.x=100.0, .y=0.0, .z=0.0};
-// vec3 tri1_p3 = {.x=0.0, .y=0.0, .z=0.0};
-
-
-// Scene* test(void){
-// 	SCEscene scene = SCEscene();
-// 	scene.add_camera(cam_point, cam_toPoint, 40, UP);
-// 	scene.add_light(OMNI, light_point, light_color);
-// 	scene.add_material(mat0_color, ORIGINAL, 0, 0.0, 0.9, 0.05, 0.0);
-// 	scene.add_material(mat1_color, ORIGINAL, 0, 0.0, 0.9, 0.1, 0.0);
-// 	scene.add_sphere(sphere_point, 25.0, 1);
-// 	scene.add_triangle(tri0_p1, tri0_p1, tri0_p2, 0);
-// 	scene.add_triangle(tri1_p1, tri1_p1, tri1_p2, 0);
-// 	scene.build_scene();
-
-// 	printf("Sanity check the scene\n");
-// 	scene.print_scene();
-
-// 	printf("Returning the scene pointer\n");
-// 	return scene.get_scene();
-// }
-
-
-
-
-
-
-
-
-
-
-
-

@@ -180,57 +180,56 @@ def writeB(scene, b_name):
 	#Camera
 	camera = scene.cameras[0]
 	t = BitArray()
-	t = bitstring.pack("10*float:32", 
+	t = bitstring.pack("int:32, 10*float:32", 0,
 		camera['point'][0], camera['point'][1], camera['point'][2], 
 		camera['fieldOfView'],
 		camera['toPoint'][0], camera['toPoint'][1], camera['toPoint'][2], 
 		camera['up'][0], camera['up'][1], camera['up'][2])
-	# print t.unpack("10*float:32")
+	# print t.unpack("int:32, 10*float:32")
 	s = s + t
 
 	#Lights
 	for i in range(scene.n_lights):
 		light = scene.lights[i]
 		t = BitArray()
-		t = bitstring.pack("int:32, 6*float:32",
+		t = bitstring.pack("2*int:32, 6*float:32", 1,
 			light['type'], 
 			light['point'][0], light['point'][1], light['point'][2], 
 			light['color'][0], light['color'][1], light['color'][2])
-		# print t.unpack("int:32, 6*float:32")
+		# print t.unpack("2*int:32, 6*float:32")
 		s = s + t
 
 	#Materials
 	for i in range(scene.n_materials):
 		mat = scene.materials[i]
 		t = BitArray()
-		t = bitstring.pack("3*float:32, 2*int:32, 4*float:32",
+		t = bitstring.pack("int:32, 3*float:32, 2*int:32, 4*float:32", 2,
 			mat['color'][0], mat['color'][1], mat['color'][2], 
 			mat['type'], mat['metal'], 
 			mat['specular'], mat['lambert'], mat['ambient'], mat['exponent'])
-		# print t.unpack("3*float:32, 2*int:32, 4*float:32")
+		# print t.unpack("int:32, 3*float:32, 2*int:32, 4*float:32")
 		s = s + t
 
 	#Spheres
 	for i in range(scene.n_spheres):
 		sphere = scene.spheres[i]
 		t = BitArray()
-		t = bitstring.pack("4*float:32, int:32",
+		t = bitstring.pack("int:32, 4*float:32, int:32", 3,
 			sphere['point'][0], sphere['point'][1], sphere['point'][2], sphere['radius'],
 			sphere['materialIndex'])
-		# print t.unpack("4*float:32, int:32")
+		# print t.unpack("int:32, 4*float:32, int:32")
 		s = s + t
 
 	#Triangles
-	#CMD_TRI F_P1x F_P1y F_P1z F_P2x F_P2y F_P2z F_P3x F_P3y F_P3z I_matIndex
 	for i in range(scene.n_triangles):
 		tri = scene.triangles[i]
 		t = BitArray()
-		t = bitstring.pack("9*float:32, int:32",
+		t = bitstring.pack("int:32, 9*float:32, int:32", 4,
 			tri['point1'][0], tri['point1'][1], tri['point1'][2],
 			tri['point2'][0], tri['point2'][1], tri['point2'][2],
 			tri['point3'][0], tri['point3'][1], tri['point3'][2],
 			tri['materialIndex'])
-		# print t.unpack("9*float:32, int:32")
+		# print t.unpack("int:32, 9*float:32, int:32")
 		s = s + t
 
 	#Write to file

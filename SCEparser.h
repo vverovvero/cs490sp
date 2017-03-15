@@ -33,7 +33,7 @@ class SCEscene
 {
 private:
 	//intialize lists
-	vector<struct Camera*> cameras;
+	vector<struct Camera> cameras;
 	vector<struct Light> lights;
 	vector<struct Material> materials;
 	vector<struct Sphere*> spheres;

@@ -15,9 +15,7 @@
 // SCEscene
 ////////////////////
 
-SCEscene::SCEscene():n_spheres(0), n_triangles(0){
-	this->s_scene.camera = (Camera *) malloc(sizeof(struct Camera));
-}
+SCEscene::SCEscene():n_spheres(0), n_triangles(0){}
 
 void SCEscene::add_camera(vec3 point, vec3 toPoint, float fieldOfView, vec3 up){
 	Camera* camera; 
@@ -27,21 +25,7 @@ void SCEscene::add_camera(vec3 point, vec3 toPoint, float fieldOfView, vec3 up){
 	camera->fieldOfView = fieldOfView;
 	camera->up = up;
 
-	this->cameras.push_back(camera);
-
-	printf("Added camera==========\n");
-	printf("camera->point: %f, %f, %f\n", camera->point.x, camera->point.y, camera->point.z);
-	printf("camera->toPoint: %f, %f, %f\n", camera->toPoint.x, camera->toPoint.y, camera->toPoint.z);
-	printf("camera->fov: %f\n", camera->fieldOfView);
-	printf("camera->up: %f, %f, %f\n", camera->up.x, camera->up.y, camera->up.z);
-
-	printf("Before returning, check camera in scene.cameras vector==========\n");
-	printf("camera->point: %f, %f, %f\n", this->cameras[0]->point.x, this->cameras[0]->point.y, this->cameras[0]->point.z);
-	printf("camera->toPoint: %f, %f, %f\n", this->cameras[0]->toPoint.x, this->cameras[0]->toPoint.y, this->cameras[0]->toPoint.z);
-	printf("camera->fov: %f\n", this->cameras[0]->fieldOfView);
-	printf("camera->up: %f, %f, %f\n", this->cameras[0]->up.x, this->cameras[0]->up.y, this->cameras[0]->up.z);
-
-
+	this->cameras.push_back(*camera);
 }
 
 void SCEscene::add_light(lightType type, vec3 point, vec3 color){
@@ -83,7 +67,6 @@ void SCEscene::add_sphere(vec3 point, float radius, int matIndex){
 	obj = (Object *) malloc(sizeof(struct Object));
 	obj->type = SPHERE;
 	obj->matIndex = matIndex;
-	obj->object = (Sphere*) malloc(sizeof(struct Sphere)); //necessary?
 	obj->object = this->spheres[this->n_spheres - 1];
 
 	this->objects.push_back(*obj);
@@ -106,37 +89,19 @@ void SCEscene::add_triangle(vec3 point1, vec3 point2, vec3 point3, int matIndex)
 	obj = (Object *) malloc(sizeof(struct Object));
 	obj->type = TRIANGLE;
 	obj->matIndex = matIndex;
-	obj->object = (Triangle*) malloc(sizeof(struct Triangle)); //necessary?
 	obj->object = this->triangles[this->n_triangles - 1];
 
 	this->objects.push_back(*obj);
 }
 
 void SCEscene::build_scene(){
-	printf("BUILDING SCENE~~~~~~~~~\n");
-	this->s_scene.camera = (Camera *) malloc(sizeof(struct Camera));
-	this->s_scene.camera = this->cameras[0];
-	printf("here1\n");
+	this->s_scene.camera = &(this->cameras[0]);
 	this->s_scene.materials = this->materials;
-	printf("here2\n");
 	this->s_scene.objects = this->objects;
-	printf("here3\n");
 	this->s_scene.lights = this->lights;
-	printf("here4\n");
 	this->s_scene.n_lights = this->lights.size();
-	printf("here5, light size: %lu\n", this->lights.size());
 	this->s_scene.n_materials = this->materials.size();
-	printf("here6\n");
 	this->s_scene.n_objects = this->objects.size();
-	printf("here7\n");
-
-	//Check attribute here
-	// printf("Building scene, check camera in scene.cameras vector==========\n");
-	// printf("camera->point: %f, %f, %f\n", this->cameras[0]->point.x, this->cameras[0]->point.y, this->cameras[0]->point.z);
-	// printf("camera->toPoint: %f, %f, %f\n", this->cameras[0]->toPoint.x, this->cameras[0]->toPoint.y, this->cameras[0]->toPoint.z);
-	// printf("camera->fov: %f\n", this->cameras[0]->fieldOfView);
-	// printf("camera->up: %f, %f, %f\n", this->cameras[0]->up.x, this->cameras[0]->up.y, this->cameras[0]->up.z);
-
 }
 
 Scene* SCEscene::get_scene(){
@@ -240,7 +205,6 @@ void Parse::camera(FILE *f, SCEscene *scene){
 		if((retval = fread(&value, 4, 1, f)) > 0){
 			swapped = swapEndian(value);
 			a[i] = IEEEInttoFloat(swapped);
-			printf("Parse camera attr: %f\n", a[i]);
 		}
 	}
 	//Construct vecs
@@ -262,14 +226,12 @@ void Parse::light(FILE *f, SCEscene *scene){
 	if((retval = fread(&value, 4, 1, f)) > 0){
 		swapped = swapEndian(value);
 		l_type = this->toLightType[swapped];
-		printf("Parse light type: %d\n", swapped);
 	}
 	//Get float args for light
 	for(i=0;i<6;i++){
 		if((retval = fread(&value, 4, 1, f)) > 0){
 			swapped = swapEndian(value);
 			a[i] = IEEEInttoFloat(swapped);
-			printf("Parse light attr: %f\n", a[i]);
 		}
 	}
 	//Construct vecs
@@ -291,27 +253,23 @@ void Parse::material(FILE *f, SCEscene *scene){
 		if((retval = fread(&value, 4, 1, f)) > 0){
 			swapped = swapEndian(value);
 			c[i] = IEEEInttoFloat(swapped);
-			printf("Parse material color attr: %f\n", c[i]);
 		}
 	}
 	//Get material type
 	if((retval = fread(&value, 4, 1, f)) > 0){
 		swapped = swapEndian(value);
 		m_type = this->toMaterialType[swapped];
-		printf("Parse material type: %d\n", swapped);
 	}
 	//Get metal bool
 	if((retval = fread(&value, 4, 1, f)) > 0){
 		swapped = swapEndian(value);
 		metal_bool = swapped;
-		printf("Parse material metal bool: %d\n", swapped);
 	}
 	//Get remaining attrs
 	for(i=0;i<4;i++){
 		if((retval = fread(&value, 4, 1, f)) > 0){
 			swapped = swapEndian(value);
 			a[i] = IEEEInttoFloat(swapped);
-			printf("Parse material attr: %f\n", a[i]);
 		}
 	}
 	//Make vecs and args
@@ -335,14 +293,12 @@ void Parse::sphere(FILE *f, SCEscene *scene){
 		if((retval = fread(&value, 4, 1, f)) > 0){
 			swapped = swapEndian(value);
 			a[i] = IEEEInttoFloat(swapped);
-			printf("Parse sphere attr: %f\n", a[i]);
 		}
 	}
 	//Get sphere matIndex
 	if((retval = fread(&value, 4, 1, f)) > 0){
 		swapped = swapEndian(value);
 		matIndex = swapped;
-		printf("Parse matIndex: %d\n", swapped);
 	}
 	//Make vec3 and args
 	vec3 point = {.x=a[0], .y=a[1], .z=a[2]};
@@ -361,14 +317,12 @@ void Parse::triangle(FILE *f, SCEscene *scene){
 		if((retval = fread(&value, 4, 1, f)) > 0){
 			swapped = swapEndian(value);
 			a[i] = IEEEInttoFloat(swapped);
-			printf("Parse tri attr: %f\n", a[i]);
 		}
 	}
 	//Get matIndex
 	if((retval = fread(&value, 4, 1, f)) > 0){
 		swapped = swapEndian(value);
 		matIndex = swapped;
-		printf("Parse matIndex: %d\n", swapped);
 	}
 	//Make vec3
 	vec3 point1={.x=a[0], .y=a[1], .z=a[2]};
@@ -392,36 +346,23 @@ void Parse::parseSCE(char * infile, SCEscene *scene){
 		
 		// Flip to correct for byte order
 		int swapped = swapEndian(cmd);
-        printf("~~~~~~~~~~~~~~~~~~~~~~~~\n");
-		printf("0x%08x\n", swapped);
-		printf("%f\n", (float)swapped);
-		printf("%d\n", swapped);
-
-		// printf("++Float is: %f\n", IEEEInttoFloat(swapped));
-
 		switch (swapped){
 			case 0:
-				printf("Adding Camera\n");
 				Parse::camera(f, scene);
 				break;
 			case 1:
-				printf("Adding Light\n");
 				Parse::light(f, scene);
 				break;
 			case 2:
-				printf("Adding Material\n");
 				Parse::material(f, scene);
 				break;
 			case 3:
-				printf("Adding Sphere\n");
 				Parse::sphere(f, scene);
 				break;
 			case 4:
-				printf("Adding Triangle\n");
 				Parse::triangle(f, scene);
 				break;
 			case 5:
-				printf("Reached end of binary file.\n");
 				break;
 			default:
 				printf("Invalid cmd\n");

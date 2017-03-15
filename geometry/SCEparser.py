@@ -1,7 +1,7 @@
 ############################################################################################
 # Read in SCE file that contains a user friendly scene description.
 # Use:
-# python ./SCEparser.py <sce_file> <h_file>
+# python ./SCEparser.py <sce_file> <bin_file>
 
 # Scene contains lists such as:
 # scene.lights = [<instance1>, <instance2>, etc]

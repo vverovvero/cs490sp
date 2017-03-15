@@ -15,7 +15,9 @@
 // SCEscene
 ////////////////////
 
-SCEscene::SCEscene():n_spheres(0), n_triangles(0){}
+SCEscene::SCEscene():n_spheres(0), n_triangles(0){
+	this->s_scene.camera = (Camera *) malloc(sizeof(struct Camera));
+}
 
 void SCEscene::add_camera(vec3 point, vec3 toPoint, float fieldOfView, vec3 up){
 	Camera* camera; 
@@ -25,7 +27,21 @@ void SCEscene::add_camera(vec3 point, vec3 toPoint, float fieldOfView, vec3 up){
 	camera->fieldOfView = fieldOfView;
 	camera->up = up;
 
-	this->cameras.push_back(*camera);
+	this->cameras.push_back(camera);
+
+	printf("Added camera==========\n");
+	printf("camera->point: %f, %f, %f\n", camera->point.x, camera->point.y, camera->point.z);
+	printf("camera->toPoint: %f, %f, %f\n", camera->toPoint.x, camera->toPoint.y, camera->toPoint.z);
+	printf("camera->fov: %f\n", camera->fieldOfView);
+	printf("camera->up: %f, %f, %f\n", camera->up.x, camera->up.y, camera->up.z);
+
+	printf("Before returning, check camera in scene.cameras vector==========\n");
+	printf("camera->point: %f, %f, %f\n", this->cameras[0]->point.x, this->cameras[0]->point.y, this->cameras[0]->point.z);
+	printf("camera->toPoint: %f, %f, %f\n", this->cameras[0]->toPoint.x, this->cameras[0]->toPoint.y, this->cameras[0]->toPoint.z);
+	printf("camera->fov: %f\n", this->cameras[0]->fieldOfView);
+	printf("camera->up: %f, %f, %f\n", this->cameras[0]->up.x, this->cameras[0]->up.y, this->cameras[0]->up.z);
+
+
 }
 
 void SCEscene::add_light(lightType type, vec3 point, vec3 color){
@@ -67,6 +83,7 @@ void SCEscene::add_sphere(vec3 point, float radius, int matIndex){
 	obj = (Object *) malloc(sizeof(struct Object));
 	obj->type = SPHERE;
 	obj->matIndex = matIndex;
+	obj->object = (Sphere*) malloc(sizeof(struct Sphere)); //necessary?
 	obj->object = this->spheres[this->n_spheres - 1];
 
 	this->objects.push_back(*obj);
@@ -89,19 +106,37 @@ void SCEscene::add_triangle(vec3 point1, vec3 point2, vec3 point3, int matIndex)
 	obj = (Object *) malloc(sizeof(struct Object));
 	obj->type = TRIANGLE;
 	obj->matIndex = matIndex;
+	obj->object = (Triangle*) malloc(sizeof(struct Triangle)); //necessary?
 	obj->object = this->triangles[this->n_triangles - 1];
 
 	this->objects.push_back(*obj);
 }
 
 void SCEscene::build_scene(){
-	this->s_scene.camera = &(this->cameras[0]);
+	printf("BUILDING SCENE~~~~~~~~~\n");
+	this->s_scene.camera = (Camera *) malloc(sizeof(struct Camera));
+	this->s_scene.camera = this->cameras[0];
+	printf("here1\n");
 	this->s_scene.materials = this->materials;
+	printf("here2\n");
 	this->s_scene.objects = this->objects;
+	printf("here3\n");
 	this->s_scene.lights = this->lights;
+	printf("here4\n");
 	this->s_scene.n_lights = this->lights.size();
+	printf("here5, light size: %lu\n", this->lights.size());
 	this->s_scene.n_materials = this->materials.size();
+	printf("here6\n");
 	this->s_scene.n_objects = this->objects.size();
+	printf("here7\n");
+
+	//Check attribute here
+	// printf("Building scene, check camera in scene.cameras vector==========\n");
+	// printf("camera->point: %f, %f, %f\n", this->cameras[0]->point.x, this->cameras[0]->point.y, this->cameras[0]->point.z);
+	// printf("camera->toPoint: %f, %f, %f\n", this->cameras[0]->toPoint.x, this->cameras[0]->toPoint.y, this->cameras[0]->toPoint.z);
+	// printf("camera->fov: %f\n", this->cameras[0]->fieldOfView);
+	// printf("camera->up: %f, %f, %f\n", this->cameras[0]->up.x, this->cameras[0]->up.y, this->cameras[0]->up.z);
+
 }
 
 Scene* SCEscene::get_scene(){
@@ -197,7 +232,7 @@ int swapEndian(int value){
 }
 
 //read the camera arguments using fread, construct camera
-void Parse::camera(FILE *f, SCEscene scene){
+void Parse::camera(FILE *f, SCEscene *scene){
 	//Get camera inputs from binary file
 	int i, value, retval, swapped;
 	float a[10];
@@ -215,11 +250,11 @@ void Parse::camera(FILE *f, SCEscene scene){
 	vec3 up = {.x=a[7], .y=a[8], .z=a[9]};
 
 	//Add camera to scene
-	scene.add_camera(point, toPoint, fov, up);
+	(*scene).add_camera(point, toPoint, fov, up);
 }
 
 //read light arguments using fread, add light to scene
-void Parse::light(FILE *f, SCEscene scene){
+void Parse::light(FILE *f, SCEscene *scene){
 	int i, value, retval, swapped;
 	lightType l_type;
 	float a[6];
@@ -242,10 +277,10 @@ void Parse::light(FILE *f, SCEscene scene){
 	vec3 color = {.x=a[3], .y=a[4], .z=a[5]};
 
 	//Add light
-	scene.add_light(l_type, point, color);
+	(*scene).add_light(l_type, point, color);
 }
 
-void Parse::material(FILE *f, SCEscene scene){
+void Parse::material(FILE *f, SCEscene *scene){
 	int i, value, retval, swapped;
 	materialType m_type;
 	int metal_bool;
@@ -286,11 +321,11 @@ void Parse::material(FILE *f, SCEscene scene){
 	float ambient = a[2];
 	float exponent = a[3];
 	//Add material
-	scene.add_material(color, m_type, metal_bool, specular, lambert, ambient, exponent);
+	(*scene).add_material(color, m_type, metal_bool, specular, lambert, ambient, exponent);
 }
 
 //Get sphere args from binary file, add sphere to scene
-void Parse::sphere(FILE *f, SCEscene scene){
+void Parse::sphere(FILE *f, SCEscene *scene){
 	int i, value, retval, swapped;
 	float a[4];
 	float radius;
@@ -313,11 +348,11 @@ void Parse::sphere(FILE *f, SCEscene scene){
 	vec3 point = {.x=a[0], .y=a[1], .z=a[2]};
 	radius = a[3];
 	//Add sphere
-	scene.add_sphere(point, radius, matIndex);
+	(*scene).add_sphere(point, radius, matIndex);
 }
 
 //Get triangle args from binary file, add triangle to scene
-void Parse::triangle(FILE *f, SCEscene scene){
+void Parse::triangle(FILE *f, SCEscene *scene){
 	int i, value, retval, swapped;
 	float a[9];
 	int matIndex;
@@ -340,11 +375,11 @@ void Parse::triangle(FILE *f, SCEscene scene){
 	vec3 point2={.x=a[3], .y=a[4], .z=a[5]};
 	vec3 point3={.x=a[6], .y=a[7], .z=a[8]};
 	//Add triangle
-	scene.add_triangle(point1, point2, point3, matIndex);
+	(*scene).add_triangle(point1, point2, point3, matIndex);
 
 }
 
-void Parse::parseSCE(char * infile, SCEscene scene){
+void Parse::parseSCE(char * infile, SCEscene *scene){
 	FILE *f = fopen(infile, "rb");
 	if(f == NULL){
 		fprintf(stderr, "Unable to open input file\n");

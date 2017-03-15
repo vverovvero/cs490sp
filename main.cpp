@@ -444,7 +444,7 @@ int main (int argc, char const *argv[]){
   //Call parser
   char infile[50];
   strcpy(infile, argv[1]);
-  parse.parseSCE(infile, scene);
+  parse.parseSCE(infile, &scene);
 
    // scene.add_camera(cam_point, cam_toPoint, 40, UP);
    // scene.add_light(OMNI, light_point, light_color);
@@ -454,7 +454,7 @@ int main (int argc, char const *argv[]){
    // scene.add_triangle(tri0_p1, tri0_p2, tri0_p3, 0);
    // scene.add_triangle(tri1_p1, tri1_p2, tri1_p3, 0);
 
-  //Build the scene
+  // Build the scene
   scene.build_scene();
 
   printf("Sanity check the scene\n");

@@ -33,7 +33,7 @@ class SCEscene
 {
 private:
 	//intialize lists
-	vector<struct Camera> cameras;
+	vector<struct Camera*> cameras;
 	vector<struct Light> lights;
 	vector<struct Material> materials;
 	vector<struct Sphere*> spheres;
@@ -79,12 +79,12 @@ private:
 public:
 	Parse();
 
-	void camera(FILE *f, SCEscene scene);
-	void light(FILE *f, SCEscene scene);
-	void material(FILE *f, SCEscene scene);
-	void sphere(FILE *f, SCEscene scene);
-	void triangle(FILE *f, SCEscene scene);
-	void parseSCE(char *infile, SCEscene scene);
+	void camera(FILE *f, SCEscene *scene);
+	void light(FILE *f, SCEscene *scene);
+	void material(FILE *f, SCEscene *scene);
+	void sphere(FILE *f, SCEscene *scene);
+	void triangle(FILE *f, SCEscene *scene);
+	void parseSCE(char *infile, SCEscene *scene);
 };
 
 

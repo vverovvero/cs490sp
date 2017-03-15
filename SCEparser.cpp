@@ -188,6 +188,161 @@ float IEEEInttoFloat(int value) {
 	return u.f;
 }
 
+int swapEndian(int value){
+	// Flip to correct for byte order
+	return	((value>>24)&0xff) | // move byte 3 to byte 0
+            ((value<<8)&0xff0000) | // move byte 1 to byte 2
+            ((value>>8)&0xff00) | // move byte 2 to byte 1
+            ((value<<24)&0xff000000); // byte 0 to byte 3
+}
+
+//read the camera arguments using fread, construct camera
+void Parse::camera(FILE *f, SCEscene scene){
+	//Get camera inputs from binary file
+	int i, value, retval, swapped;
+	float a[10];
+	for(i=0;i<10;i++){
+		if((retval = fread(&value, 4, 1, f)) > 0){
+			swapped = swapEndian(value);
+			a[i] = IEEEInttoFloat(swapped);
+			printf("Parse camera attr: %f\n", a[i]);
+		}
+	}
+	//Construct vecs
+	vec3 point = {.x=a[0], .y=a[1], .z=a[2]};
+	float fov = a[3];
+	vec3 toPoint = {.x=a[4], .y=a[5], .z=a[6]};
+	vec3 up = {.x=a[7], .y=a[8], .z=a[9]};
+
+	//Add camera to scene
+	scene.add_camera(point, toPoint, fov, up);
+}
+
+//read light arguments using fread, add light to scene
+void Parse::light(FILE *f, SCEscene scene){
+	int i, value, retval, swapped;
+	lightType l_type;
+	float a[6];
+	//Get light type
+	if((retval = fread(&value, 4, 1, f)) > 0){
+		swapped = swapEndian(value);
+		l_type = this->toLightType[swapped];
+		printf("Parse light type: %d\n", swapped);
+	}
+	//Get float args for light
+	for(i=0;i<6;i++){
+		if((retval = fread(&value, 4, 1, f)) > 0){
+			swapped = swapEndian(value);
+			a[i] = IEEEInttoFloat(swapped);
+			printf("Parse light attr: %f\n", a[i]);
+		}
+	}
+	//Construct vecs
+	vec3 point = {.x=a[0], .y=a[1], .z=a[2]};
+	vec3 color = {.x=a[3], .y=a[4], .z=a[5]};
+
+	//Add light
+	scene.add_light(l_type, point, color);
+}
+
+void Parse::material(FILE *f, SCEscene scene){
+	int i, value, retval, swapped;
+	materialType m_type;
+	int metal_bool;
+	float c[3];
+	float a[4];
+	//Get color
+	for(i=0;i<3;i++){
+		if((retval = fread(&value, 4, 1, f)) > 0){
+			swapped = swapEndian(value);
+			c[i] = IEEEInttoFloat(swapped);
+			printf("Parse material color attr: %f\n", c[i]);
+		}
+	}
+	//Get material type
+	if((retval = fread(&value, 4, 1, f)) > 0){
+		swapped = swapEndian(value);
+		m_type = this->toMaterialType[swapped];
+		printf("Parse material type: %d\n", swapped);
+	}
+	//Get metal bool
+	if((retval = fread(&value, 4, 1, f)) > 0){
+		swapped = swapEndian(value);
+		metal_bool = swapped;
+		printf("Parse material metal bool: %d\n", swapped);
+	}
+	//Get remaining attrs
+	for(i=0;i<4;i++){
+		if((retval = fread(&value, 4, 1, f)) > 0){
+			swapped = swapEndian(value);
+			a[i] = IEEEInttoFloat(swapped);
+			printf("Parse material attr: %f\n", a[i]);
+		}
+	}
+	//Make vecs and args
+	vec3 color = {.x=c[0], .y=c[1], .z=c[2]};
+	float specular = a[0];
+	float lambert = a[1];
+	float ambient = a[2];
+	float exponent = a[3];
+	//Add material
+	scene.add_material(color, m_type, metal_bool, specular, lambert, ambient, exponent);
+}
+
+//Get sphere args from binary file, add sphere to scene
+void Parse::sphere(FILE *f, SCEscene scene){
+	int i, value, retval, swapped;
+	float a[4];
+	float radius;
+	int matIndex;
+	//Get sphere args
+	for(i=0;i<4;i++){
+		if((retval = fread(&value, 4, 1, f)) > 0){
+			swapped = swapEndian(value);
+			a[i] = IEEEInttoFloat(swapped);
+			printf("Parse sphere attr: %f\n", a[i]);
+		}
+	}
+	//Get sphere matIndex
+	if((retval = fread(&value, 4, 1, f)) > 0){
+		swapped = swapEndian(value);
+		matIndex = swapped;
+		printf("Parse matIndex: %d\n", swapped);
+	}
+	//Make vec3 and args
+	vec3 point = {.x=a[0], .y=a[1], .z=a[2]};
+	radius = a[3];
+	//Add sphere
+	scene.add_sphere(point, radius, matIndex);
+}
+
+//Get triangle args from binary file, add triangle to scene
+void Parse::triangle(FILE *f, SCEscene scene){
+	int i, value, retval, swapped;
+	float a[9];
+	int matIndex;
+	//Get tri args
+	for(i=0;i<9;i++){
+		if((retval = fread(&value, 4, 1, f)) > 0){
+			swapped = swapEndian(value);
+			a[i] = IEEEInttoFloat(swapped);
+			printf("Parse tri attr: %f\n", a[i]);
+		}
+	}
+	//Get matIndex
+	if((retval = fread(&value, 4, 1, f)) > 0){
+		swapped = swapEndian(value);
+		matIndex = swapped;
+		printf("Parse matIndex: %d\n", swapped);
+	}
+	//Make vec3
+	vec3 point1={.x=a[0], .y=a[1], .z=a[2]};
+	vec3 point2={.x=a[3], .y=a[4], .z=a[5]};
+	vec3 point3={.x=a[6], .y=a[7], .z=a[8]};
+	//Add triangle
+	scene.add_triangle(point1, point2, point3, matIndex);
+
+}
 
 void Parse::parseSCE(char * infile, SCEscene scene){
 	FILE *f = fopen(infile, "rb");
@@ -197,80 +352,45 @@ void Parse::parseSCE(char * infile, SCEscene scene){
 	}
 
 	int cmd;
-
-
-	printf("size of int: %lu\n", sizeof(int));
-	printf("size of float: %lu\n", sizeof(float));
-	printf("size of pointer: %lu\n", sizeof(float*));
-
-	//check file size
-	fseek (f , 0 , SEEK_END);
-  	long lSize = ftell (f);
-  	rewind (f);
-
-  	float test_float = 50.0f;
-  	printf("On this system, 50.0f is rep as: 0x%08x\n", test_float);
-
-
-  	printf("size of file: %lu\n", lSize);
-
 	int retval;
 	while(( retval = fread(&cmd, 4, 1, f)) > 0){
 		
 		// Flip to correct for byte order
-		int swapped = ((cmd>>24)&0xff) | // move byte 3 to byte 0
-                    ((cmd<<8)&0xff0000) | // move byte 1 to byte 2
-                    ((cmd>>8)&0xff00) | // move byte 2 to byte 1
-                    ((cmd<<24)&0xff000000); // byte 0 to byte 3
+		int swapped = swapEndian(cmd);
         printf("~~~~~~~~~~~~~~~~~~~~~~~~\n");
 		printf("0x%08x\n", swapped);
 		printf("%f\n", (float)swapped);
 		printf("%d\n", swapped);
 
-		printf("++Float is: %f\n", IEEEInttoFloat(swapped));
+		// printf("++Float is: %f\n", IEEEInttoFloat(swapped));
 
 		switch (swapped){
 			case 0:
 				printf("Adding Camera\n");
-				// for (int i=0; i<10; i++) {
-				// 	fread(&cmd, 4, 1, f);
-				// 	printf("float %d \n", cmd);
-				// }
-				fseek(f, 40, SEEK_CUR);
+				Parse::camera(f, scene);
 				break;
 			case 1:
 				printf("Adding Light\n");
-				fseek(f, 28, SEEK_CUR);
+				Parse::light(f, scene);
 				break;
 			case 2:
 				printf("Adding Material\n");
-				fseek(f, 36, SEEK_CUR);
+				Parse::material(f, scene);
 				break;
 			case 3:
 				printf("Adding Sphere\n");
-				fseek(f, 20, SEEK_CUR);
+				Parse::sphere(f, scene);
 				break;
 			case 4:
 				printf("Adding Triangle\n");
-				fseek(f, 40, SEEK_CUR);
+				Parse::triangle(f, scene);
 				break;
 			case 5:
-				printf("Found END\n");
+				printf("Reached end of binary file.\n");
 				break;
 			default:
 				printf("Invalid cmd\n");
-		}
-
-		// printf("cmd = %d\n", cmd);
-
-		if(cmd == 5){
-			break;
-		}
-		else{
-			continue;
-		}
-		
+		}		
 	}
-
 	fclose(f);
 }

@@ -67,8 +67,7 @@ public:
 
 typedef enum {INT, FLOAT, LIGHTTYPE, MATERIALTYPE, VEC3} argType;
 
-//writeH takes Scene instance and creates struct
-//parser has functions to read sce text file and generate scene object
+//parser reads from a binary file and adds objects to SCEscene
 class Parse
 {
 private:
@@ -77,16 +76,14 @@ private:
 	//unordered map from string to materialType
 	unordered_map<int, materialType> toMaterialType;
 
-
 public:
 	Parse();
 
-	// void camera(SCEscene scene, char * attributes);
-	// void light(SCEscene scene, char * attributes);
-	// void material(SCEscene scene, char * attributes);
-	// void sphere(SCEscene scene, char * attributes);
-	// void triangle(SCEscene scene, char * attributes);
-	// void include(SCEscene scene, char * attributes);
+	void camera(FILE *f, SCEscene scene);
+	void light(FILE *f, SCEscene scene);
+	void material(FILE *f, SCEscene scene);
+	void sphere(FILE *f, SCEscene scene);
+	void triangle(FILE *f, SCEscene scene);
 	void parseSCE(char *infile, SCEscene scene);
 };
 

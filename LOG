@@ -1,4 +1,4 @@
-cd /Users/wendychen/Desktop/cs490_serial_raytracer/undirectional_pathtracer
+cd /Users/wendychen/Desktop/cs490_serial_raytracer/unidirectional_pathtracer
 
 ---------------------------------------------------------------------
 /********************* Latest meeting *************************/
@@ -122,10 +122,10 @@ The format of the binary file is:
 ie. CAM_CMD CAM_ARG_1 CAM_ARG_2 CAM_ARG_3 CAM_ARG_4
 
 The parser's job is to call the correct function based on the command, and unpack the arguments as the correct types
-each command is 1 byte
+each command is 4 bytes
 each argument is spaced out every 4 bytes
--enums are represented with an int, 1 byte
--ints are 1 byte
+-enums are represented with an int, 4 byte
+-ints are 4 byte
 -floats take up all 4 bytes
 
 ===================

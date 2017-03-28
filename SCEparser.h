@@ -22,8 +22,6 @@ using std::vector;
 using std::unordered_map;
 using boost::tuple;
 
-Scene* test(void);
-
 
 /************************************/
 /*   Scene Object (Intermediate)    */
@@ -54,14 +52,23 @@ public:
 	void add_sphere(vec3 point, float radius, int matIndex);
 	void add_triangle(vec3 point1, vec3 point2, vec3 point3, int matIndex);
 
-	// void free_camera();
-	// void print_camera();
-
 	void build_scene();
 	Scene * get_scene();
 
 	void print_scene();
 
+	void free_cameras(); //not needed
+	void free_lights();  //not needed
+	void free_materials();  //not needed
+	void free_spheres();
+	void free_triangles();
+	void free_objects();  //not needed
+
+	~SCEscene(){
+		//free the vectors that contain pointers
+		free_spheres();
+		free_triangles();
+	}
 };
 
 
@@ -84,7 +91,7 @@ public:
 	void material(FILE *f, SCEscene *scene);
 	void sphere(FILE *f, SCEscene *scene);
 	void triangle(FILE *f, SCEscene *scene);
-	void parseSCE(char *infile, SCEscene *scene);
+	int parseSCE(char *infile, SCEscene *scene);
 };
 
 

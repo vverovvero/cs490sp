@@ -15,7 +15,9 @@
 // SCEscene
 ////////////////////
 
-SCEscene::SCEscene():n_spheres(0), n_triangles(0){}
+SCEscene::SCEscene():
+	n_spheres(0), n_triangles(0), cameras(), lights(), 
+	materials(), spheres(), triangles(), objects() {}
 
 void SCEscene::add_camera(vec3 point, vec3 toPoint, float fieldOfView, vec3 up){
 	Camera* camera; 
@@ -28,6 +30,16 @@ void SCEscene::add_camera(vec3 point, vec3 toPoint, float fieldOfView, vec3 up){
 	this->cameras.push_back(*camera);
 }
 
+//not needed
+void SCEscene::free_cameras(){
+	int i, n;
+	n = this->cameras.size();
+	for(i=0; i<n; i++){
+		free(&this->cameras[i]);
+	}
+	//call destructor for cameras?
+}
+
 void SCEscene::add_light(lightType type, vec3 point, vec3 color){
 	Light* light;
 	light = (Light *) malloc(sizeof(struct Light));
@@ -36,6 +48,16 @@ void SCEscene::add_light(lightType type, vec3 point, vec3 color){
 	light->color = color;
 
 	this->lights.push_back(*light);
+}
+
+//not needed
+void SCEscene::free_lights(){
+	int i, n;
+	n = this->lights.size();
+	for(i=0; i<n; i++){
+		free(&this->lights[i]);
+	}
+	//call destructor?
 }
 
 void SCEscene::add_material(vec3 color, materialType type, int metal, float specular, float lambert, float ambient, float exponent){
@@ -50,6 +72,16 @@ void SCEscene::add_material(vec3 color, materialType type, int metal, float spec
 	material->exponent = exponent;
 	
 	this->materials.push_back(*material);
+}
+
+//not needed
+void SCEscene::free_materials(){
+	int i, n;
+	n = this->materials.size();
+	for(i=0; i<n; i++){
+		free(&this->materials[i]);
+	}
+	//call destructor?
 }
 
 void SCEscene::add_sphere(vec3 point, float radius, int matIndex){
@@ -72,6 +104,14 @@ void SCEscene::add_sphere(vec3 point, float radius, int matIndex){
 	this->objects.push_back(*obj);
 }
 
+void SCEscene::free_spheres(){
+	int i, n;
+	n = this->n_spheres;
+	for(i=0; i<n; i++){
+		free(this->spheres[i]);
+	}
+	//call destructor?
+}
 
 void SCEscene::add_triangle(vec3 point1, vec3 point2, vec3 point3, int matIndex){
 	Triangle* tri;
@@ -92,6 +132,26 @@ void SCEscene::add_triangle(vec3 point1, vec3 point2, vec3 point3, int matIndex)
 	obj->object = this->triangles[this->n_triangles - 1];
 
 	this->objects.push_back(*obj);
+}
+
+
+void SCEscene::free_triangles(){
+	int i, n;
+	n = this->n_triangles;
+	for(i=0; i<n; i++){
+		free(this->triangles[i]);
+	}
+	//call destructor
+}
+
+//not needed
+void SCEscene::free_objects(){
+	int i, n;
+	n = this->n_triangles + this->n_spheres;
+	for(i=0; i<n; i++){
+		free(&this->objects[i]);
+	}
+	//call destructor?
 }
 
 void SCEscene::build_scene(){
@@ -333,11 +393,11 @@ void Parse::triangle(FILE *f, SCEscene *scene){
 
 }
 
-void Parse::parseSCE(char * infile, SCEscene *scene){
+int Parse::parseSCE(char * infile, SCEscene *scene){
 	FILE *f = fopen(infile, "rb");
 	if(f == NULL){
 		fprintf(stderr, "Unable to open input file\n");
-		return;
+		return -1;
 	}
 
 	int cmd;
@@ -369,4 +429,6 @@ void Parse::parseSCE(char * infile, SCEscene *scene){
 		}		
 	}
 	fclose(f);
+
+	return 0;
 }

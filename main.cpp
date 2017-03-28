@@ -394,19 +394,25 @@ void tone_map(float* img, int size){
 
 int main (int argc, char const *argv[]){
   //Confirm there is a scene file
-  if(argc != 2){
-    fprintf(stderr, "Usage: ./main <.bin file>\n");
+  if(argc != 3){
+    fprintf(stderr, "Usage: ./main <.bin file> <.png name>\n");
     return -1;
   }
+
+  //Grab command line args
+  char infile[50], outfile[50];
+  strcpy(infile, argv[1]);
+  strcpy(outfile, argv[2]);
 
    // Initialize SCEscene and Parser
   SCEscene scene = SCEscene();
   Parse parse = Parse();
 
   //Call parser
-  char infile[50];
-  strcpy(infile, argv[1]);
-  parse.parseSCE(infile, &scene);
+  if(parse.parseSCE(infile, &scene) != 0){
+    fprintf(stderr, "Parsing failed\n");
+    return -1;
+  }
 
   // Build the scene
   scene.build_scene();
@@ -416,7 +422,7 @@ int main (int argc, char const *argv[]){
 
   //load scene via a function
   Scene * s_scene_ptr;
-  s_scene_ptr = (Scene *) malloc(sizeof(struct Scene));
+  // s_scene_ptr = (Scene *) malloc(sizeof(struct Scene));
   s_scene_ptr = scene.get_scene();
 
   //initalize random number generator
@@ -453,13 +459,14 @@ int main (int argc, char const *argv[]){
     cairo_image_surface_create_for_data ((unsigned char*)imgData, CAIRO_FORMAT_RGB24, WIDTH, HEIGHT, stride);
 
 
-  cairo_surface_write_to_png (surface_cairo, "simple.png");
+  cairo_surface_write_to_png (surface_cairo, outfile);
   cairo_surface_destroy (surface_cairo);
 
   free(imgData);
   /////////////////////////////////////////
 
   free(img);
+  //Scene is destructed automatically ~SCEscene()
 
   return 0;
 }

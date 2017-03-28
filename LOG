@@ -14,7 +14,10 @@ referenced by index in the triangle structs
 -send progress report for next week
 
 3/8:
--
+-Need to fix parsing.  Now it's spring break
+
+3/28:
+
 
 ---------------------------------------------------------------------
 /********************* Miscellaneous to do *************************/
@@ -81,7 +84,7 @@ Could be like tuples <sphere, matindex>
 -if it all works well, then continue building SCEparser
 
 
-/********* 3/13: PARSE class  ******/
+/********* 3/14: PARSE class  ******/
 
 ======
 *Main idea is to take argList and convert it into correct parameter of correct type
@@ -95,8 +98,6 @@ etc
 
 -toVec3 Map
 
-
-TO DO================
 How to fix parsing:
 Ideal: 
 -YAML scene description
@@ -108,7 +109,6 @@ What I should do:
 +fix/extend python parser so that transformations are handled
 -python parser gives serialized binary file
 -c++ opens serialized binary file, parses, and builds scene
-
 
 The format of the binary file is:
 -send camera
@@ -129,8 +129,29 @@ each argument is spaced out every 4 bytes
 -floats take up all 4 bytes
 
 ===================
--fix parsing
+-fixed parsing
+
+What did I learn?
+I rewrote the parser workflow three times.
+The first time, the part I got write was the Python parser to convert user text into an intermediate format.  
+The part I got wrong was trying to have the text converted .h file be compiled into the renderer.
+The second time, the part I got write was having C++ process a file during run time.  The part I got wrong was that C++ shouldn't process unsanitized user file.
+The solution was to have Python take a user file and produce a standardized, sanitized binary, that C++ could easily parse into a scene without resorting to messy hash tables for type look up.
+
+Essentially, the unforeseen problems caused me to go through three versions of specification, which greatly confused me during the process and slowed it down.
+
+
+
+/********* 3/28: Acceleration class  ******/
+-fix the destructors (only free vectors of pointers)
+
+-add freeing to the scene
 -add acceleration
+-add a low sample, high sample option to render loop, pass in as a command line arg
+
+
+
+
 -add materials
 -add Direct MIS, etc
 -add UV mapping?

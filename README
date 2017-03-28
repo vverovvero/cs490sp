@@ -86,6 +86,10 @@ Important: INCLUDE cannot contain nested INCLUDEs
 -Transformations supported for TRIANGLE: Translate(x, y, z), Scale(x, y, z), RotateX(a), RotateY(a), RotateZ(a)
 
 
+SCENE GENERATION SAMPLE WORKFLOW:
+python geometry/SCEparser.py scene1.sce scene1.bin
+./main scene1.bin scene1.png
+
 
 ---------------------------------------------------------------------
 /*********************** Acceleration ******************************/

@@ -9,14 +9,16 @@ default: all
 
 all: main
 
-main: main.o SCEparser.cpp vec3.o
+main: main.o SCEparser.o intersect.o vec3.o
 	${CC} ${CFLAGS} -I${IDIR} ${LIBS} -o $@  $^ -lcairo   
 
 vec3.o: vec3.cpp
 
 main.o: main.cpp vec3.cpp
 
-SCEparser.o: SCEparser.cpp vec3.cpp
+intersect.o: intersect.cpp vec3.cpp
+
+SCEparser.o: SCEparser.cpp vec3.cpp intersect.cpp
 
 valgrind: main
 	valgrind -q —-tool=memcheck —leak-check=yes ./main

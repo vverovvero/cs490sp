@@ -142,10 +142,12 @@ Essentially, the unforeseen problems caused me to go through three versions of s
 
 
 
-/********* 3/28: Acceleration class  ******/
--fix the destructors (only free vectors of pointers)
+/********* 4/4: Acceleration class  ******/
++fix the destructors (only free vectors of pointers)
 
--add freeing to the scene
+-test the triangleBB 
+
+
 -add acceleration
 -add a low sample, high sample option to render loop, pass in as a command line arg
 

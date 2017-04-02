@@ -392,81 +392,89 @@ void tone_map(float* img, int size){
 
 /***************************** Main loop *******************************/
 
-int main (int argc, char const *argv[]){
-  //Confirm there is a scene file
-  if(argc != 3){
-    fprintf(stderr, "Usage: ./main <.bin file> <.png name>\n");
-    return -1;
-  }
-
-  //Grab command line args
-  char infile[50], outfile[50];
-  strcpy(infile, argv[1]);
-  strcpy(outfile, argv[2]);
-
-   // Initialize SCEscene and Parser
-  SCEscene scene = SCEscene();
-  Parse parse = Parse();
-
-  //Call parser
-  if(parse.parseSCE(infile, &scene) != 0){
-    fprintf(stderr, "Parsing failed\n");
-    return -1;
-  }
-
-  // Build the scene
-  scene.build_scene();
-
-  printf("Sanity check the scene\n");
-  scene.print_scene();
-
-  //load scene via a function
-  Scene * s_scene_ptr;
-  // s_scene_ptr = (Scene *) malloc(sizeof(struct Scene));
-  s_scene_ptr = scene.get_scene();
-
-  //initalize random number generator
-  srand48(time(NULL));
-
-  // This is MALLOCED!!
-  printf("Getting the scene pointer\n");
-  float* img = render(s_scene_ptr);
-  
-
-  tone_map(img, HEIGHT * WIDTH * 4);
-
-  printf("Rendered! \n");
-
-  //////////////////CAIRO///////////////////////
-  Pixel* imgData = (Pixel *) malloc(sizeof(Pixel) * WIDTH * HEIGHT);
-
-  for (int y=0; y<HEIGHT; y++){
-    for (int x=0; x<WIDTH; x++){
-      
-      int indexOld = (y * WIDTH * 4) + (x * 4);
-      int indexNew = ((HEIGHT - y - 1) * WIDTH) + x;
-      imgData[indexNew].B = (unsigned char) img[indexOld + 0];
-      imgData[indexNew].G = (unsigned char) img[indexOld + 1];
-      imgData[indexNew].R = (unsigned char) img[indexOld + 2];
-      imgData[indexNew].A = (unsigned char) img[indexOld + 3];
-
-    }
-  }
-
-  int stride = cairo_format_stride_for_width (CAIRO_FORMAT_RGB24, WIDTH);
-
-  cairo_surface_t* surface_cairo =
-    cairo_image_surface_create_for_data ((unsigned char*)imgData, CAIRO_FORMAT_RGB24, WIDTH, HEIGHT, stride);
-
-
-  cairo_surface_write_to_png (surface_cairo, outfile);
-  cairo_surface_destroy (surface_cairo);
-
-  free(imgData);
-  /////////////////////////////////////////
-
-  free(img);
-  //Scene is destructed automatically ~SCEscene()
-
+//testing
+int main(int argc, char const *argv[])
+{
+  TEST_INTERSECT();
   return 0;
 }
+
+
+// int main (int argc, char const *argv[]){
+//   //Confirm there is a scene file
+//   if(argc != 3){
+//     fprintf(stderr, "Usage: ./main <.bin file> <.png name>\n");
+//     return -1;
+//   }
+
+//   //Grab command line args
+//   char infile[50], outfile[50];
+//   strcpy(infile, argv[1]);
+//   strcpy(outfile, argv[2]);
+
+//    // Initialize SCEscene and Parser
+//   SCEscene scene = SCEscene();
+//   Parse parse = Parse();
+
+//   //Call parser
+//   if(parse.parseSCE(infile, &scene) != 0){
+//     fprintf(stderr, "Parsing failed\n");
+//     return -1;
+//   }
+
+//   // Build the scene
+//   scene.build_scene();
+
+//   printf("Sanity check the scene\n");
+//   scene.print_scene();
+
+//   //load scene via a function
+//   Scene * s_scene_ptr;
+//   // s_scene_ptr = (Scene *) malloc(sizeof(struct Scene));
+//   s_scene_ptr = scene.get_scene();
+
+//   //initalize random number generator
+//   srand48(time(NULL));
+
+//   // This is MALLOCED!!
+//   printf("Getting the scene pointer\n");
+//   float* img = render(s_scene_ptr);
+  
+
+//   tone_map(img, HEIGHT * WIDTH * 4);
+
+//   printf("Rendered! \n");
+
+//   //////////////////CAIRO///////////////////////
+//   Pixel* imgData = (Pixel *) malloc(sizeof(Pixel) * WIDTH * HEIGHT);
+
+//   for (int y=0; y<HEIGHT; y++){
+//     for (int x=0; x<WIDTH; x++){
+      
+//       int indexOld = (y * WIDTH * 4) + (x * 4);
+//       int indexNew = ((HEIGHT - y - 1) * WIDTH) + x;
+//       imgData[indexNew].B = (unsigned char) img[indexOld + 0];
+//       imgData[indexNew].G = (unsigned char) img[indexOld + 1];
+//       imgData[indexNew].R = (unsigned char) img[indexOld + 2];
+//       imgData[indexNew].A = (unsigned char) img[indexOld + 3];
+
+//     }
+//   }
+
+//   int stride = cairo_format_stride_for_width (CAIRO_FORMAT_RGB24, WIDTH);
+
+//   cairo_surface_t* surface_cairo =
+//     cairo_image_surface_create_for_data ((unsigned char*)imgData, CAIRO_FORMAT_RGB24, WIDTH, HEIGHT, stride);
+
+
+//   cairo_surface_write_to_png (surface_cairo, outfile);
+//   cairo_surface_destroy (surface_cairo);
+
+//   free(imgData);
+//   /////////////////////////////////////////
+
+//   free(img);
+//   //Scene is destructed automatically ~SCEscene()
+
+//   return 0;
+// }

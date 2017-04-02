@@ -1,3 +1,6 @@
+//vec3.h                                                    Wendy Chen, 2017
+//Sources:
+
 #ifndef VEC3_H
 #define VEC3_H
 

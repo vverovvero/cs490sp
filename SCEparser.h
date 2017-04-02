@@ -11,6 +11,7 @@
 
 #include "main.h"
 #include "vec3.h"
+#include "intersect.h"
 
 #include <stdio.h>
 
@@ -72,8 +73,6 @@ public:
 };
 
 
-typedef enum {INT, FLOAT, LIGHTTYPE, MATERIALTYPE, VEC3} argType;
-
 //parser reads from a binary file and adds objects to SCEscene
 class Parse
 {
@@ -92,6 +91,46 @@ public:
 	void sphere(FILE *f, SCEscene *scene);
 	void triangle(FILE *f, SCEscene *scene);
 	int parseSCE(char *infile, SCEscene *scene);
+};
+
+
+/************************************/
+/*           Acceleration           */
+/************************************/
+
+typedef enum {X, Y, Z} axisType;
+
+class KDnode{
+private:
+	vec3 min;
+	vec3 max;
+	vector<struct Object*> objects;
+	vec3 split_point;
+	int depth;
+	KDnode* left;
+	KDnode* right;
+public:
+	KDnode(){};
+	KDnode* init_root(vec3 min, vec3 max, SCEscene* scene);
+	axisType getLongestAxis();
+	vec3 getMid(axisType axis);
+	void populate(KDnode* parent){};
+	void split();
+
+	~KDnode(){};
+};
+
+class KDtree{
+private:
+	KDnode* root;
+public:
+	//constructor should take arguments for KDnode init_root
+	KDtree(){};
+	KDnode* get_kdtree(){
+		return this->root;
+	};
+	void print();
+	~KDtree(){};
 };
 
 

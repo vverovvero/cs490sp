@@ -361,6 +361,16 @@ bool triangleBB(Triangle tri, vec3 min, vec3 max){
 	}
 }
 
+bool objectBB(Object obj, vec3 min, vec3 max){
+	if(obj.type == SPHERE){
+		Sphere* sph = (Sphere*) obj.object;
+		return sphereBB(*sph, min, max);
+	}
+	else{
+		Triangle *tri = (Triangle*) obj.object;
+		return triangleBB(*tri, min, max);
+	}
+}
 
 ////////////////
 //testing

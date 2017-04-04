@@ -30,6 +30,7 @@ using std::vector;
 
 bool sphereBB(Sphere sphere, vec3 min, vec3 max);
 bool triangleBB(Triangle tri, vec3 min, vec3 max);
+bool objectBB(Object obj, vec3 min, vec3 max);
 
 void TEST_INTERSECT();
 

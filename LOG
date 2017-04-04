@@ -144,11 +144,13 @@ Essentially, the unforeseen problems caused me to go through three versions of s
 
 /********* 4/4: Acceleration class  ******/
 +fix the destructors (only free vectors of pointers)
++test the triangleBB 
 
--test the triangleBB 
 
+-add acceleration (KDtree and KDnode)
+-add method to udpate the Scene with the tree, and update the main.cpp to use the tree
+-add destructor for KDtree and KDnode
 
--add acceleration
 -add a low sample, high sample option to render loop, pass in as a command line arg
 
 

@@ -395,7 +395,50 @@ void tone_map(float* img, int size){
 //testing
 int main(int argc, char const *argv[])
 {
-  TEST_INTERSECT();
+  // TEST_INTERSECT();
+
+  //Confirm there is a scene file
+  if(argc != 3){
+    fprintf(stderr, "Usage: ./main <.bin file> <.png name>\n");
+    return -1;
+  }
+
+  //Grab command line args
+  char infile[50], outfile[50];
+  strcpy(infile, argv[1]);
+  strcpy(outfile, argv[2]);
+
+   // Initialize SCEscene and Parser
+  SCEscene scene = SCEscene();
+  Parse parse = Parse();
+
+  //Call parser
+  if(parse.parseSCE(infile, &scene) != 0){
+    fprintf(stderr, "Parsing failed\n");
+    return -1;
+  }
+
+  // Build the scene
+  scene.build_scene();
+
+  printf("Sanity check the scene\n");
+  scene.print_scene();
+
+  //build the kd tree
+  vec3 boundMin = {
+    .x = -500.0,
+    .y = -500.0,
+    .z = -500.0
+  };
+  vec3 boundMax = {
+    .x = 500.0,
+    .y = 500.0,
+    .z = 500.0
+  };
+  KDtree tree = KDtree(boundMin, boundMax, &scene);
+  KDnode* root = tree.get_kdtree();
+  (*root).print();
+
   return 0;
 }
 

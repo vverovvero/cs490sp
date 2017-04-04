@@ -14,6 +14,21 @@
 /////////////////////
 // KDtree and KDnode
 ////////////////////
+// KDnode* KDnode::init_root(vec3 min, vec3 max, SCEscene* scene){
+
+// }
+// axisType KDnode::getLongestAxis();
+// vec3 KDnode::getMid(axisType axis);
+// void KDnode::populate(KDnode* parent){};
+// void KDnode::split(){
+// 	//split if there are more than 10 objects in the node
+// 	if(this->objects.size() > 10){
+// 		axisType longAxis = getLongestAxis();
+// 		vec3 mid = getMid(longAxis);
+// 		this->left = KDnode(min, mid, this->depth+1);
+// 		this->right = KDnode(mid, max, this->depth+1);
+// 	}
+// }
 
 
 
@@ -172,6 +187,10 @@ void SCEscene::build_scene(){
 
 Scene* SCEscene::get_scene(){
 	return &(this->s_scene);
+}
+
+vector<struct Object>* SCEscene::get_objects(){
+	return &(this->objects);
 }
 
 void SCEscene::print_scene(){

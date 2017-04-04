@@ -30,147 +30,147 @@ void KDnode::init_root(SCEscene* scene){
 		this->objects.push_back(&(*scene_objects)[i]);
 	}
 };
-// void KDnode::getLongestAxis(){
-// 	//assumes that this->min and this->max have been initialized
-// 	float xdiff = fabs(max.x - min.x);
-// 	float ydiff = fabs(max.y - min.y);
-// 	float zdiff = fabs(max.z - min.z);
-// 	if(xdiff >= ydiff && xdiff >= zdiff){
-// 		this->split_axis = X;
-// 	}
-// 	else if(ydiff >= xdiff && ydiff >= zdiff){
-// 		this->split_axis = Y;
-// 	}
-// 	else{
-// 		this->split_axis = Z;
-// 	}
-// };
-// // void KDnode::getMid(axisType axis){
-// // 	//assumes that min, max, and split_axis are initialized
-// // };
-// void KDnode::getNaiveMid(){
+void KDnode::getLongestAxis(){
+	//assumes that this->min and this->max have been initialized
+	float xdiff = fabs(max.x - min.x);
+	float ydiff = fabs(max.y - min.y);
+	float zdiff = fabs(max.z - min.z);
+	if(xdiff >= ydiff && xdiff >= zdiff){
+		this->split_axis = X;
+	}
+	else if(ydiff >= xdiff && ydiff >= zdiff){
+		this->split_axis = Y;
+	}
+	else{
+		this->split_axis = Z;
+	}
+};
+// void KDnode::getMid(axisType axis){
 // 	//assumes that min, max, and split_axis are initialized
-// 	vec3 split = {
-// 		.x = (this->max.x + this->min.x)/2.0,
-// 		.y = (this->max.y + this->min.y)/2.0,
-// 		.z = (this->max.z + this->min.z)/2.0
-// 	};
-// 	this->split_point = split;
-// }
-// pair<vec3, vec3> KDnode::getBoundsFromMid(){
-// 	//midMin and midMax inherit values
-// 	vec3 midMin = this->min;
-// 	vec3 midMax = this->max;
-// 	switch(this->split_axis){
-// 		case X:
-// 			midMin.x = this->split_point.x;
-// 			midMax.x = this->split_point.x;
-// 			break;
-// 		case Y:
-// 			midMin.y = this->split_point.y;
-// 			midMax.y = this->split_point.y;
-// 			break;
-// 		case Z:
-// 			midMin.z = this->split_point.z;
-// 			midMax.z = this->split_point.z;
-// 			break;
-// 		default:
-// 			break;
-// 	};
-// 	return pair<vec3, vec3> (midMin, midMax);
-// }
-// void KDnode::populate(KDnode* parent){
-// 	//for each object in parent, add to this node if intersects
-// 	int i;
-// 	int size = parent->objects.size();
-// 	for(i=0; i<size; i++){
-// 		Object obj = parent->objects[i];
-// 		if(objectBB(obj, this->min, this->max)){
-// 			this->objects.push_back(obj);
-// 		}
-// 	}
 // };
-// void KDnode::split(){
-// 	if(this->objects.size() > 10){
-// 		//For current node, get long axis and mid point
-// 		(*this).getLongestAxis();
-// 		(*this).getNaiveMid();
-// 		//get the bounds for left and right children
-// 		pair<vec3, vec3> midBounds = (*this).getBoundsFromMid();
-// 		vec3 midMin = midBounds.first;
-// 		vec3 midMax = midBounds.second;
-// 		//create the left and right children
-// 		this->left = new KDnode(this->min, midMax, this->depth+1);
-// 		this->right = new KDnode(midMin, this->max, this->depth+1);
-// 		//populate left child and right child
-// 		(*this->left).populate(this);
-// 		(*this->right).populate(this);
-// 		//call split on left child and right child
-// 		(*this->left).split();
-// 		(*this->right).split();
-// 	}
-// };
-// //print node and its children
-// void KDnode::print(){
-// 	printf("Node depth: %d =============\n", this->depth);
-// 	printf("Min bound(%.2f, %.2f, %.2f), Max bound(%.2f, %.2f, %.2f)\n",
-// 		(this->min).x, (this->min).y, (this->min).z,
-// 		(this->max).x, (this->max).y, (this->max).z);
-// 	//print the objects
-// 	int i;
-// 	int size = this->objects.size();
-// 	for(i=0; i<size; i++){
-// 		Object obj = this->objects[i];
-// 		if(obj.type == SPHERE){
-// 			Sphere* sph = (Sphere*) obj.object;
-// 			printf("Sphere point(%.2f, %.2f, %.2f), radius %.2f\n",
-// 				(*sph).point.x, (*sph).point.y, (*sph).point.z,
-// 				(*sph).radius);
+void KDnode::getNaiveMid(){
+	//assumes that min, max, and split_axis are initialized
+	vec3 split = {
+		.x = (this->max.x + this->min.x)/2.0,
+		.y = (this->max.y + this->min.y)/2.0,
+		.z = (this->max.z + this->min.z)/2.0
+	};
+	this->split_point = split;
+}
+pair<vec3, vec3> KDnode::getBoundsFromMid(){
+	//midMin and midMax inherit values
+	vec3 midMin = this->min;
+	vec3 midMax = this->max;
+	switch(this->split_axis){
+		case X:
+			midMin.x = this->split_point.x;
+			midMax.x = this->split_point.x;
+			break;
+		case Y:
+			midMin.y = this->split_point.y;
+			midMax.y = this->split_point.y;
+			break;
+		case Z:
+			midMin.z = this->split_point.z;
+			midMax.z = this->split_point.z;
+			break;
+		default:
+			break;
+	};
+	return pair<vec3, vec3> (midMin, midMax);
+}
+void KDnode::populate(KDnode* parent){
+	//for each object pointer in parent, add to this node if intersects
+	int i;
+	int size = parent->objects.size();
+	for(i=0; i<size; i++){
+		Object* obj = parent->objects[i];
+		if(objectBB(*obj, this->min, this->max)){
+			this->objects.push_back(obj);
+		}
+	}
+};
+void KDnode::split(){
+	if(this->objects.size() > 10){
+		//For current node, get long axis and mid point
+		(*this).getLongestAxis();
+		(*this).getNaiveMid();
+		//get the bounds for left and right children
+		pair<vec3, vec3> midBounds = (*this).getBoundsFromMid();
+		vec3 midMin = midBounds.first;
+		vec3 midMax = midBounds.second;
+		//create the left and right children
+		this->left = new KDnode(this->min, midMax, this->depth+1);
+		this->right = new KDnode(midMin, this->max, this->depth+1);
+		//populate left child and right child
+		(*this->left).populate(this);
+		(*this->right).populate(this);
+		//call split on left child and right child
+		(*this->left).split();
+		(*this->right).split();
+	}
+};
+//print node and its children
+void KDnode::print(){
+	printf("Node depth: %d =============\n", this->depth);
+	printf("Min bound(%.2f, %.2f, %.2f), Max bound(%.2f, %.2f, %.2f)\n",
+		(this->min).x, (this->min).y, (this->min).z,
+		(this->max).x, (this->max).y, (this->max).z);
+	//print the objects
+	int i;
+	int size = this->objects.size();
+	for(i=0; i<size; i++){
+		Object* obj = this->objects[i];
+		if(obj->type == SPHERE){
+			Sphere* sph = (Sphere*) obj->object;
+			printf("Sphere point(%.2f, %.2f, %.2f), radius %.2f\n",
+				(*sph).point.x, (*sph).point.y, (*sph).point.z,
+				(*sph).radius);
 
-// 		}
-// 		else if(obj.type == TRIANGLE){
-// 			Triangle* tri = (Triangle*) obj.object;
-// 			printf("Triangle p1(%.2f, %.2f, %.2f), p2(%.2f, %.2f, %.2f), p3(%.2f, %.2f, %.2f)\n",
-// 				(*tri).point1.x, (*tri).point1.y, (*tri).point1.z,
-// 				(*tri).point2.x, (*tri).point2.y, (*tri).point2.z,
-// 				(*tri).point3.x, (*tri).point3.y, (*tri).point3.z);
-// 		}
-// 		else{
-// 			printf("Impossible object\n");
-// 		}
-// 	}
-// 	if(this->left != NULL){
-// 		(*this->left).print();
-// 	}
-// 	if(this->right != NULL){
-// 		(*this->right).print();
-// 	}
-// }
-// //think about destruction
-// KDnode::~KDnode(){};
+		}
+		else if(obj->type == TRIANGLE){
+			Triangle* tri = (Triangle*) obj->object;
+			printf("Triangle p1(%.2f, %.2f, %.2f), p2(%.2f, %.2f, %.2f), p3(%.2f, %.2f, %.2f)\n",
+				(*tri).point1.x, (*tri).point1.y, (*tri).point1.z,
+				(*tri).point2.x, (*tri).point2.y, (*tri).point2.z,
+				(*tri).point3.x, (*tri).point3.y, (*tri).point3.z);
+		}
+		else{
+			printf("Impossible object\n");
+		}
+	}
+	if(this->left != NULL){
+		(*this->left).print();
+	}
+	if(this->right != NULL){
+		(*this->right).print();
+	}
+}
+//think about destruction
+KDnode::~KDnode(){};
 
 
-// /////////////////////
-// //KDtree
-// ////////////////////
-// //constructor should take arguments for KDnode init_root
-// KDtree::KDtree(vec3 min, vec3 max, SCEscene* scene){
-// 	printf("Creating tree!~~~~~~\n");
-// 	//create root with maximum bounding box
-// 	KDnode* root = new KDnode(min, max, 0);
-// 	//copy all scene objects to root
-// 	(*root).init_root(scene);
-// 	//split
-// 	(*root).split();
-// 	//assign root to KDtree root
-// 	this->root = root;
-// 	printf("Finished tree!~~~~~~\n");
-// };
-// KDnode* KDtree::get_kdtree(){
-// 	return this->root;
-// };
-// //think about destruction
-// KDtree::~KDtree(){};
+/////////////////////
+//KDtree
+////////////////////
+//constructor should take arguments for KDnode init_root
+KDtree::KDtree(vec3 min, vec3 max, SCEscene* scene){
+	printf("Creating tree!~~~~~~\n");
+	//create root with maximum bounding box
+	KDnode* root = new KDnode(min, max, 0);
+	//copy all scene objects to root
+	(*root).init_root(scene);
+	//split
+	(*root).split();
+	//assign root to KDtree root
+	this->root = root;
+	printf("Finished tree!~~~~~~\n");
+};
+KDnode* KDtree::get_kdtree(){
+	return this->root;
+};
+//think about destruction
+KDtree::~KDtree(){};
 
 
 /////////////////////

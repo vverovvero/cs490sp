@@ -35,7 +35,7 @@ vec3 triNormal(Triangle* tri);
 float triIntersection(Triangle* tri, Ray* ray);
 float* render(Scene* scene, KDtree* tree);
 vec3 trace(Ray* ray, Scene* scene, KDtree* tree, vec3 *pointAtTime, float *contribution);
-// Dist intersectSceneAccel(Ray *ray, KDnode* node);
+Dist intersectSceneAccel(Ray *ray, KDnode* node);
 Dist intersectScene(Ray* ray, Scene* scene);
 int isLightVisible(vec3 point, Scene* scene, KDtree* tree, vec3 light);
 vec3 surface(Ray* ray, Scene* scene, KDtree* tree, Object* object, vec3 pointAtTime, vec3 normal, float *contribution);
@@ -150,161 +150,161 @@ float triIntersection(Triangle* tri, Ray* ray) {
 //Search for collsion with kd tree first
 
 
-// //intersectObjectList
-// //search for intersection between ray and object on shortened list
-// //may need to adjust so that shortList is a vecotr of Object pointers
-// Dist intersectObjectList(Ray* ray, vector<struct Object>* shortList) {
-//   // printf("intersectObjectList called!\n");
-//   Dist closest = { .distance = FLT_MAX, .object = NULL};
+//intersectObjectList
+//search for intersection between ray and object on shortened list
+//may need to adjust so that shortList is a vecotr of Object pointers
+Dist intersectObjectList(Ray* ray, vector<struct Object*>* shortList) {
+  // printf("intersectObjectList called!\n");
+  Dist closest = { .distance = FLT_MAX, .object = NULL};
 
-//   // Find closest intersecting object
-//   int i;
-//   int size = (*shortList).size();
-//   for (i = 0; i < size; i++) {
+  // Find closest intersecting object
+  int i;
+  int size = (*shortList).size();
+  for (i = 0; i < size; i++) {
 
-//     Object object = (*shortList)[i];
+    Object* object = (*shortList)[i];
 
-//     float dist = -1.0f;
+    float dist = -1.0f;
 
-//     if (object.type == SPHERE)  {
-//       dist = sphereIntersection((Sphere*)object.object, ray);
-//     }
+    if (object->type == SPHERE)  {
+      dist = sphereIntersection((Sphere*)object->object, ray);
+    }
 
-//     if (object.type == TRIANGLE) {
-//       dist = triIntersection ((Triangle*)object.object, ray);
-//     }
+    if (object->type == TRIANGLE) {
+      dist = triIntersection ((Triangle*)object->object, ray);
+    }
 
-//     if (dist > .0f && dist < closest.distance) {
-//       closest.distance = dist;
-//       closest.object = &object;
-//     }
-//   }
+    if (dist > .0f && dist < closest.distance) {
+      closest.distance = dist;
+      closest.object = object;
+    }
+  }
 
-//   if (closest.distance == FLT_MAX) {
-//     closest.distance = -1.0f;
-//   }
+  if (closest.distance == FLT_MAX) {
+    closest.distance = -1.0f;
+  }
 
-//   return closest;
-// }
-// //intersectBox, adapted from scratchapixel, the non-optimized code
-// //return infinity or tmin
-// float intersectBox(Ray* ray, KDnode* node){
-//   // printf("intersectBox called!\n");
-//   //Get values from node
-//   vec3 nodeMin = (*node).getMin();
-//   vec3 nodeMax = (*node).getMax();
+  return closest;
+}
+//intersectBox, adapted from scratchapixel, the non-optimized code
+//return infinity or tmin
+float intersectBox(Ray* ray, KDnode* node){
+  // printf("intersectBox called!\n");
+  //Get values from node
+  vec3 nodeMin = (*node).getMin();
+  vec3 nodeMax = (*node).getMax();
 
-//   float tmin, tmax, old_tmin, old_tmax;
-//   float tymin, tymax, old_tymin, old_tymax;
-//   float tzmin, tzmax, old_tzmin, old_tzmax;
+  float tmin, tmax, old_tmin, old_tmax;
+  float tymin, tymax, old_tymin, old_tymax;
+  float tzmin, tzmax, old_tzmin, old_tzmax;
 
-//   tmin = (nodeMin.x - ray->point.x)/ray->vector.x;
-//   tmax = (nodeMax.x - ray->point.x)/ray->vector.x;
+  tmin = (nodeMin.x - ray->point.x)/ray->vector.x;
+  tmax = (nodeMax.x - ray->point.x)/ray->vector.x;
 
-//   if(tmin > tmax){
-//     old_tmin = tmin;
-//     old_tmax = tmax;
-//     tmin = old_tmax;
-//     tmax = old_tmin;
-//   }
+  if(tmin > tmax){
+    old_tmin = tmin;
+    old_tmax = tmax;
+    tmin = old_tmax;
+    tmax = old_tmin;
+  }
 
-//   tymin = (nodeMin.y - ray->point.y)/ray->vector.y;
-//   tymax = (nodeMax.y - ray->point.y)/ray->vector.y;
+  tymin = (nodeMin.y - ray->point.y)/ray->vector.y;
+  tymax = (nodeMax.y - ray->point.y)/ray->vector.y;
 
-//   if(tymin > tymax){
-//     old_tymin = tymin;
-//     old_tymax = tymax;
-//     tymin = old_tymax;
-//     tymax = old_tymin;
-//   }
+  if(tymin > tymax){
+    old_tymin = tymin;
+    old_tymax = tymax;
+    tymin = old_tymax;
+    tymax = old_tymin;
+  }
 
-//   //check for misses
-//   if((tmin > tymax) || (tymin > tmax)){
-//     return FLT_MAX;
-//   }
+  //check for misses
+  if((tmin > tymax) || (tymin > tmax)){
+    return FLT_MAX;
+  }
 
-//   //pick a min and max
-//   if(tymin > tmin){
-//     tmin = tymin;
-//   }
-//   if(tymax < tmax){
-//     tmax = tymax;
-//   }
+  //pick a min and max
+  if(tymin > tmin){
+    tmin = tymin;
+  }
+  if(tymax < tmax){
+    tmax = tymax;
+  }
 
-//   //factor in z
-//   tzmin = (nodeMin.z - ray->point.z)/ray->vector.z;
-//   tzmax = (nodeMax.z - ray->point.z)/ray->vector.z;
+  //factor in z
+  tzmin = (nodeMin.z - ray->point.z)/ray->vector.z;
+  tzmax = (nodeMax.z - ray->point.z)/ray->vector.z;
 
-//   if(tzmin > tzmax){
-//     old_tzmin = tzmin;
-//     old_tzmax = tzmax;
-//     tzmin = old_tzmax;
-//     tzmax = old_tzmin;
-//   }
+  if(tzmin > tzmax){
+    old_tzmin = tzmin;
+    old_tzmax = tzmax;
+    tzmin = old_tzmax;
+    tzmax = old_tzmin;
+  }
 
-//   if((tmin > tzmax) || (tzmin > tmax)){
-//     return FLT_MAX;
-//   }
+  if((tmin > tzmax) || (tzmin > tmax)){
+    return FLT_MAX;
+  }
 
-//   if(tzmin > tmin){
-//     tmin = tzmin;
-//   }
+  if(tzmin > tmin){
+    tmin = tzmin;
+  }
 
-//   if(tzmax < tmax){
-//     tmax = tzmax;
-//   }
+  if(tzmax < tmax){
+    tmax = tzmax;
+  }
 
-//   return tmin;
-// }
-// //intersectKD, return a list of objects
-// //fill the shortList
-// void intersectKD(Ray *ray, KDnode* node, vector<struct Object>* shortList){
-//   // printf("intersectKD called!\n");
-//   stack<KDnode*> nodeStack;
-//   nodeStack.push(node);
+  return tmin;
+}
+//intersectKD, return a list of objects
+//fill the shortList
+void intersectKD(Ray *ray, KDnode* node, vector<struct Object*>* shortList){
+  // printf("intersectKD called!\n");
+  stack<KDnode*> nodeStack;
+  nodeStack.push(node);
 
-//   while(!nodeStack.empty()){
-//     KDnode* current = nodeStack.top();
-//     nodeStack.pop();
+  while(!nodeStack.empty()){
+    KDnode* current = nodeStack.top();
+    nodeStack.pop();
 
-//     KDnode* left = current->getLeft();
-//     KDnode* right = current->getRight();
+    KDnode* left = current->getLeft();
+    KDnode* right = current->getRight();
 
-//     //check if current is a child
-//     //if it is child, check if there is an intersection, and add objects to shortList
-//     if(left == NULL && right == NULL){
-//       if(intersectBox(ray, current) != FLT_MAX){
-//         int i;
-//         vector<struct Object>* objects = current->getObjects();
-//         int size = objects->size();
-//         for(i=0; i<size; i++){
-//           (*shortList).push_back((*objects)[i]);
-//         }
-//       }
-//     }
+    //check if current is a child
+    //if it is child, check if there is an intersection, and add objects to shortList
+    if(left == NULL && right == NULL){
+      if(intersectBox(ray, current) != FLT_MAX){
+        int i;
+        vector<struct Object*>* objects = current->getObjects();
+        int size = objects->size();
+        for(i=0; i<size; i++){
+          (*shortList).push_back((*objects)[i]);
+        }
+      }
+    }
 
-//     //check if ray intersects current box
-//     //if it does, push the children onto the stack
-//     if(intersectBox(ray, current) != FLT_MAX){
-//       if(left != NULL){
-//         nodeStack.push(left);
-//       }
-//       if(right != NULL){
-//         nodeStack.push(right);
-//       }
-//     }
-//   }
-// }
+    //check if ray intersects current box
+    //if it does, push the children onto the stack
+    if(intersectBox(ray, current) != FLT_MAX){
+      if(left != NULL){
+        nodeStack.push(left);
+      }
+      if(right != NULL){
+        nodeStack.push(right);
+      }
+    }
+  }
+}
 
-// //intersectScene
-// Dist intersectSceneAccel(Ray *ray, KDnode* node){
-//   // printf("intersectScene called!\n");
-//   vector<struct Object> shortList;
-//   //fill the short list
-//   intersectKD(ray, node, &shortList);
-//   //call intersectObjectList
-//   return intersectObjectList(ray, &shortList);
-// }
+//intersectScene
+Dist intersectSceneAccel(Ray *ray, KDnode* node){
+  // printf("intersectScene called!\n");
+  vector<struct Object*> shortList;
+  //fill the short list
+  intersectKD(ray, node, &shortList);
+  //call intersectObjectList
+  return intersectObjectList(ray, &shortList);
+}
 
 ///////////////////////////////////////////////
 
@@ -347,8 +347,8 @@ int isLightVisible(vec3 point, Scene* scene, KDtree* tree, vec3 light) {
   vec3 vector = unitVector(subtract(light, point));
   Ray ray = { .point = point, .vector = vector};
 
-  Dist distObject =  intersectScene(&ray, scene);
-  // Dist distObject = intersectSceneAccel(&ray, (*tree).get_kdtree());
+  // Dist distObject =  intersectScene(&ray, scene);
+  Dist distObject = intersectSceneAccel(&ray, (*tree).get_kdtree());
 
   //Edit?  Is this comparing length of unit vector
   if (distObject.distance > 0.0f && distObject.distance < (length(full_vector) -.005)) {
@@ -394,8 +394,8 @@ vec3 surface(Ray* ray, Scene* scene, KDtree* tree, Object* object, vec3 pointAtT
 //no!  don't want to recalculate.  store throughput
 vec3 trace(Ray* ray, Scene* scene, KDtree* tree, vec3 *pointAtTime, float* contribution) {
 
-  Dist distObject = intersectScene(ray, scene);
-  // Dist distObject = intersectSceneAccel(ray, (*tree).get_kdtree());
+  // Dist distObject = intersectScene(ray, scene);
+  Dist distObject = intersectSceneAccel(ray, (*tree).get_kdtree());
 
   // If we don't hit anything, fill this pixel with the background color -
   // in this case, white.

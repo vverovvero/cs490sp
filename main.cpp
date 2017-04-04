@@ -22,6 +22,9 @@
 #include "main.h"
 #include "SCEparser.h"
 
+#include <stack>
+using std::stack;
+
 
 /***************************** Forward declarations *******************************/
 
@@ -30,11 +33,12 @@ float sphereIntersection(Sphere* sphere, Ray* ray);
 vec3 sphereNormal(Sphere* sphere, vec3 pos);
 vec3 triNormal(Triangle* tri);
 float triIntersection(Triangle* tri, Ray* ray);
-float* render(Scene* scene);
-vec3 trace(Ray* ray, Scene* scene, vec3 *pointAtTime, float *contribution);
+float* render(Scene* scene, KDtree* tree);
+vec3 trace(Ray* ray, Scene* scene, KDtree* tree, vec3 *pointAtTime, float *contribution);
+// Dist intersectSceneAccel(Ray *ray, KDnode* node);
 Dist intersectScene(Ray* ray, Scene* scene);
-int isLightVisible(vec3 point, Scene* scene, vec3 light);
-vec3 surface(Ray* ray, Scene* scene, Object* object, vec3 pointAtTime, vec3 normal, float *contribution);
+int isLightVisible(vec3 point, Scene* scene, KDtree* tree, vec3 light);
+vec3 surface(Ray* ray, Scene* scene, KDtree* tree, Object* object, vec3 pointAtTime, vec3 normal, float *contribution);
 
 
 /***************************** Path tracing functions *******************************/
@@ -132,6 +136,179 @@ float triIntersection(Triangle* tri, Ray* ray) {
     return dist;
 }
 
+///////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+// Scene Intersection functions, to be called from main
+///////////////////////////////////////////////////////////////////////////
+//This file contains functions for determining if a ray has intersected an object in the scene.
+//sources: http://www.scratchapixel.com/lessons/3d-basic-rendering/minimal-ray-tracer-rendering-simple-shapes/ray-box-intersection
+//sources: https://blog.frogslayer.com/kd-trees-for-faster-ray-tracing-with-triangles/
+
+//My changes:
+//Modified, to account for the use of kdTree
+//Encapsulates original function, but gives the function a list of objects instead
+//Search for collsion with kd tree first
+
+
+// //intersectObjectList
+// //search for intersection between ray and object on shortened list
+// //may need to adjust so that shortList is a vecotr of Object pointers
+// Dist intersectObjectList(Ray* ray, vector<struct Object>* shortList) {
+//   // printf("intersectObjectList called!\n");
+//   Dist closest = { .distance = FLT_MAX, .object = NULL};
+
+//   // Find closest intersecting object
+//   int i;
+//   int size = (*shortList).size();
+//   for (i = 0; i < size; i++) {
+
+//     Object object = (*shortList)[i];
+
+//     float dist = -1.0f;
+
+//     if (object.type == SPHERE)  {
+//       dist = sphereIntersection((Sphere*)object.object, ray);
+//     }
+
+//     if (object.type == TRIANGLE) {
+//       dist = triIntersection ((Triangle*)object.object, ray);
+//     }
+
+//     if (dist > .0f && dist < closest.distance) {
+//       closest.distance = dist;
+//       closest.object = &object;
+//     }
+//   }
+
+//   if (closest.distance == FLT_MAX) {
+//     closest.distance = -1.0f;
+//   }
+
+//   return closest;
+// }
+// //intersectBox, adapted from scratchapixel, the non-optimized code
+// //return infinity or tmin
+// float intersectBox(Ray* ray, KDnode* node){
+//   // printf("intersectBox called!\n");
+//   //Get values from node
+//   vec3 nodeMin = (*node).getMin();
+//   vec3 nodeMax = (*node).getMax();
+
+//   float tmin, tmax, old_tmin, old_tmax;
+//   float tymin, tymax, old_tymin, old_tymax;
+//   float tzmin, tzmax, old_tzmin, old_tzmax;
+
+//   tmin = (nodeMin.x - ray->point.x)/ray->vector.x;
+//   tmax = (nodeMax.x - ray->point.x)/ray->vector.x;
+
+//   if(tmin > tmax){
+//     old_tmin = tmin;
+//     old_tmax = tmax;
+//     tmin = old_tmax;
+//     tmax = old_tmin;
+//   }
+
+//   tymin = (nodeMin.y - ray->point.y)/ray->vector.y;
+//   tymax = (nodeMax.y - ray->point.y)/ray->vector.y;
+
+//   if(tymin > tymax){
+//     old_tymin = tymin;
+//     old_tymax = tymax;
+//     tymin = old_tymax;
+//     tymax = old_tymin;
+//   }
+
+//   //check for misses
+//   if((tmin > tymax) || (tymin > tmax)){
+//     return FLT_MAX;
+//   }
+
+//   //pick a min and max
+//   if(tymin > tmin){
+//     tmin = tymin;
+//   }
+//   if(tymax < tmax){
+//     tmax = tymax;
+//   }
+
+//   //factor in z
+//   tzmin = (nodeMin.z - ray->point.z)/ray->vector.z;
+//   tzmax = (nodeMax.z - ray->point.z)/ray->vector.z;
+
+//   if(tzmin > tzmax){
+//     old_tzmin = tzmin;
+//     old_tzmax = tzmax;
+//     tzmin = old_tzmax;
+//     tzmax = old_tzmin;
+//   }
+
+//   if((tmin > tzmax) || (tzmin > tmax)){
+//     return FLT_MAX;
+//   }
+
+//   if(tzmin > tmin){
+//     tmin = tzmin;
+//   }
+
+//   if(tzmax < tmax){
+//     tmax = tzmax;
+//   }
+
+//   return tmin;
+// }
+// //intersectKD, return a list of objects
+// //fill the shortList
+// void intersectKD(Ray *ray, KDnode* node, vector<struct Object>* shortList){
+//   // printf("intersectKD called!\n");
+//   stack<KDnode*> nodeStack;
+//   nodeStack.push(node);
+
+//   while(!nodeStack.empty()){
+//     KDnode* current = nodeStack.top();
+//     nodeStack.pop();
+
+//     KDnode* left = current->getLeft();
+//     KDnode* right = current->getRight();
+
+//     //check if current is a child
+//     //if it is child, check if there is an intersection, and add objects to shortList
+//     if(left == NULL && right == NULL){
+//       if(intersectBox(ray, current) != FLT_MAX){
+//         int i;
+//         vector<struct Object>* objects = current->getObjects();
+//         int size = objects->size();
+//         for(i=0; i<size; i++){
+//           (*shortList).push_back((*objects)[i]);
+//         }
+//       }
+//     }
+
+//     //check if ray intersects current box
+//     //if it does, push the children onto the stack
+//     if(intersectBox(ray, current) != FLT_MAX){
+//       if(left != NULL){
+//         nodeStack.push(left);
+//       }
+//       if(right != NULL){
+//         nodeStack.push(right);
+//       }
+//     }
+//   }
+// }
+
+// //intersectScene
+// Dist intersectSceneAccel(Ray *ray, KDnode* node){
+//   // printf("intersectScene called!\n");
+//   vector<struct Object> shortList;
+//   //fill the short list
+//   intersectKD(ray, node, &shortList);
+//   //call intersectObjectList
+//   return intersectObjectList(ray, &shortList);
+// }
+
+///////////////////////////////////////////////
+
+
 Dist intersectScene(Ray* ray, Scene* scene) {
 
   Dist closest = { .distance = FLT_MAX, .object = NULL};
@@ -164,13 +341,14 @@ Dist intersectScene(Ray* ray, Scene* scene) {
   return closest;
 }
 
-int isLightVisible(vec3 point, Scene* scene, vec3 light) {
+int isLightVisible(vec3 point, Scene* scene, KDtree* tree, vec3 light) {
 
   vec3 full_vector = subtract(light,point);
   vec3 vector = unitVector(subtract(light, point));
   Ray ray = { .point = point, .vector = vector};
 
   Dist distObject =  intersectScene(&ray, scene);
+  // Dist distObject = intersectSceneAccel(&ray, (*tree).get_kdtree());
 
   //Edit?  Is this comparing length of unit vector
   if (distObject.distance > 0.0f && distObject.distance < (length(full_vector) -.005)) {
@@ -181,7 +359,7 @@ int isLightVisible(vec3 point, Scene* scene, vec3 light) {
   }
 }
 
-vec3 surface(Ray* ray, Scene* scene, Object* object, vec3 pointAtTime, vec3 normal, float* contribution) {
+vec3 surface(Ray* ray, Scene* scene, KDtree* tree, Object* object, vec3 pointAtTime, vec3 normal, float* contribution) {
 
   Material* material = &(scene->materials[object->matIndex]);
   vec3 objColor = material->color;
@@ -193,7 +371,7 @@ vec3 surface(Ray* ray, Scene* scene, Object* object, vec3 pointAtTime, vec3 norm
     for (int i = 0; i < scene->n_lights; i++) {
       vec3 lightPoint = scene->lights[i].point;
 
-      if (isLightVisible(pointAtTime, scene, lightPoint)){
+      if (isLightVisible(pointAtTime, scene, tree, lightPoint)){
         // lambertian reflectance
         *contribution = dotProduct(unitVector(subtract(lightPoint, pointAtTime)), normal);
 
@@ -214,9 +392,10 @@ vec3 surface(Ray* ray, Scene* scene, Object* object, vec3 pointAtTime, vec3 norm
 
 //need to keep track of path_length and what bounce we are currently on
 //no!  don't want to recalculate.  store throughput
-vec3 trace(Ray* ray, Scene* scene, vec3 *pointAtTime, float* contribution) {
+vec3 trace(Ray* ray, Scene* scene, KDtree* tree, vec3 *pointAtTime, float* contribution) {
 
   Dist distObject = intersectScene(ray, scene);
+  // Dist distObject = intersectSceneAccel(ray, (*tree).get_kdtree());
 
   // If we don't hit anything, fill this pixel with the background color -
   // in this case, white.
@@ -234,10 +413,10 @@ vec3 trace(Ray* ray, Scene* scene, vec3 *pointAtTime, float* contribution) {
   *pointAtTime = add(ray->point, scale(ray->vector, dist));
   // printf("trace intersected pointAtTime(%f, %f, %f)\n", (*pointAtTime).x, (*pointAtTime).y, (*pointAtTime).z);
 
-  return surface(ray, scene, object, *pointAtTime, objectNormal(object, *pointAtTime), contribution);
+  return surface(ray, scene, tree, object, *pointAtTime, objectNormal(object, *pointAtTime), contribution);
 }
 
-float* render(Scene* scene) {
+float* render(Scene* scene, KDtree *tree) {
 
   float* img = (float*)malloc(sizeof(float) * HEIGHT * WIDTH * 4);
 
@@ -282,7 +461,7 @@ float* render(Scene* scene) {
         //
         //     // use the vector generated to raytrace the scene, returning a color
         //     // as a `{x, y, z}` vector of RGB values
-        //     color = add(color, trace(&ray, scene, 0));
+        //     color = add(color, trace(&ray, scene, tree, 0));
 
             //One ray per pixel; no antialiasing
             ray.point = camera->point;
@@ -294,7 +473,7 @@ float* render(Scene* scene) {
             vec3 pointAtTime = ray.point; //first intersection point is ray origin
             float contribution = 0.0; //we assign roulette value as contribution
             float throughput = 1.0;
-            color = add(color, trace(&ray, scene, &pointAtTime, &contribution));
+            color = add(color, trace(&ray, scene, tree, &pointAtTime, &contribution));
 
             // color = ZERO;//for Indirect test only
             //////////////Indirect lighting/////////////////////
@@ -327,12 +506,12 @@ float* render(Scene* scene) {
               
               //Scale the first two bounces by throughput
               if(num_samples < 3){
-                // indirect_color = add(indirect_color, trace(&ray, scene, &pointAtTime));
-                indirect_color = add(indirect_color, scale(trace(&ray, scene, &pointAtTime, &contribution), throughput));
+                // indirect_color = add(indirect_color, trace(&ray, scene, tree, &pointAtTime));
+                indirect_color = add(indirect_color, scale(trace(&ray, scene, tree, &pointAtTime, &contribution), throughput));
               }
               //don't scale roulette, due to averaging later
               else{
-                indirect_roulette = add(indirect_roulette, trace(&ray, scene, &pointAtTime, &contribution));
+                indirect_roulette = add(indirect_roulette, trace(&ray, scene, tree, &pointAtTime, &contribution));
               }
               num_samples++;
 
@@ -392,58 +571,11 @@ void tone_map(float* img, int size){
 
 /***************************** Main loop *******************************/
 
-//testing
-int main(int argc, char const *argv[])
-{
-  // TEST_INTERSECT();
+// //testing
+// int main(int argc, char const *argv[])
+// {
+//   // TEST_INTERSECT();
 
-  //Confirm there is a scene file
-  if(argc != 3){
-    fprintf(stderr, "Usage: ./main <.bin file> <.png name>\n");
-    return -1;
-  }
-
-  //Grab command line args
-  char infile[50], outfile[50];
-  strcpy(infile, argv[1]);
-  strcpy(outfile, argv[2]);
-
-   // Initialize SCEscene and Parser
-  SCEscene scene = SCEscene();
-  Parse parse = Parse();
-
-  //Call parser
-  if(parse.parseSCE(infile, &scene) != 0){
-    fprintf(stderr, "Parsing failed\n");
-    return -1;
-  }
-
-  // Build the scene
-  scene.build_scene();
-
-  printf("Sanity check the scene\n");
-  scene.print_scene();
-
-  //build the kd tree
-  vec3 boundMin = {
-    .x = -500.0,
-    .y = -500.0,
-    .z = -500.0
-  };
-  vec3 boundMax = {
-    .x = 500.0,
-    .y = 500.0,
-    .z = 500.0
-  };
-  KDtree tree = KDtree(boundMin, boundMax, &scene);
-  KDnode* root = tree.get_kdtree();
-  (*root).print();
-
-  return 0;
-}
-
-
-// int main (int argc, char const *argv[]){
 //   //Confirm there is a scene file
 //   if(argc != 3){
 //     fprintf(stderr, "Usage: ./main <.bin file> <.png name>\n");
@@ -471,53 +603,115 @@ int main(int argc, char const *argv[])
 //   printf("Sanity check the scene\n");
 //   scene.print_scene();
 
-//   //load scene via a function
-//   Scene * s_scene_ptr;
-//   // s_scene_ptr = (Scene *) malloc(sizeof(struct Scene));
-//   s_scene_ptr = scene.get_scene();
-
-//   //initalize random number generator
-//   srand48(time(NULL));
-
-//   // This is MALLOCED!!
-//   printf("Getting the scene pointer\n");
-//   float* img = render(s_scene_ptr);
-  
-
-//   tone_map(img, HEIGHT * WIDTH * 4);
-
-//   printf("Rendered! \n");
-
-//   //////////////////CAIRO///////////////////////
-//   Pixel* imgData = (Pixel *) malloc(sizeof(Pixel) * WIDTH * HEIGHT);
-
-//   for (int y=0; y<HEIGHT; y++){
-//     for (int x=0; x<WIDTH; x++){
-      
-//       int indexOld = (y * WIDTH * 4) + (x * 4);
-//       int indexNew = ((HEIGHT - y - 1) * WIDTH) + x;
-//       imgData[indexNew].B = (unsigned char) img[indexOld + 0];
-//       imgData[indexNew].G = (unsigned char) img[indexOld + 1];
-//       imgData[indexNew].R = (unsigned char) img[indexOld + 2];
-//       imgData[indexNew].A = (unsigned char) img[indexOld + 3];
-
-//     }
-//   }
-
-//   int stride = cairo_format_stride_for_width (CAIRO_FORMAT_RGB24, WIDTH);
-
-//   cairo_surface_t* surface_cairo =
-//     cairo_image_surface_create_for_data ((unsigned char*)imgData, CAIRO_FORMAT_RGB24, WIDTH, HEIGHT, stride);
-
-
-//   cairo_surface_write_to_png (surface_cairo, outfile);
-//   cairo_surface_destroy (surface_cairo);
-
-//   free(imgData);
-//   /////////////////////////////////////////
-
-//   free(img);
-//   //Scene is destructed automatically ~SCEscene()
+//   //build the kd tree
+//   vec3 boundMin = {
+//     .x = -500.0,
+//     .y = -500.0,
+//     .z = -500.0
+//   };
+//   vec3 boundMax = {
+//     .x = 500.0,
+//     .y = 500.0,
+//     .z = 500.0
+//   };
+//   KDtree kdtree = KDtree(boundMin, boundMax, &scene);
+//   KDnode* root = kdtree.get_kdtree();
+//   (*root).print();
 
 //   return 0;
 // }
+
+
+int main (int argc, char const *argv[]){
+  //Confirm there is a scene file
+  if(argc != 3){
+    fprintf(stderr, "Usage: ./main <.bin file> <.png name>\n");
+    return -1;
+  }
+
+  //Grab command line args
+  char infile[50], outfile[50];
+  strcpy(infile, argv[1]);
+  strcpy(outfile, argv[2]);
+
+   // Initialize SCEscene and Parser
+  SCEscene scene = SCEscene();
+  Parse parse = Parse();
+
+  //Call parser
+  if(parse.parseSCE(infile, &scene) != 0){
+    fprintf(stderr, "Parsing failed\n");
+    return -1;
+  }
+
+  // Build the scene
+  scene.build_scene();
+
+  printf("Sanity check the scene\n");
+  scene.print_scene();
+
+  //load scene via a function
+  Scene * s_scene_ptr;
+  // s_scene_ptr = (Scene *) malloc(sizeof(struct Scene));
+  s_scene_ptr = scene.get_scene();
+
+  //build the kd tree
+  vec3 boundMin = {
+    .x = -500.0,
+    .y = -500.0,
+    .z = -500.0
+  };
+  vec3 boundMax = {
+    .x = 500.0,
+    .y = 500.0,
+    .z = 500.0
+  };
+  KDtree kdtree = KDtree(boundMin, boundMax, &scene);
+  KDnode* root = kdtree.get_kdtree();
+  (*root).print();
+
+  //initalize random number generator
+  srand48(time(NULL));
+
+  // This is MALLOCED!!
+  printf("Getting the scene pointer\n");
+  float* img = render(s_scene_ptr, &kdtree);
+  
+
+  tone_map(img, HEIGHT * WIDTH * 4);
+
+  printf("Rendered! \n");
+
+  //////////////////CAIRO///////////////////////
+  Pixel* imgData = (Pixel *) malloc(sizeof(Pixel) * WIDTH * HEIGHT);
+
+  for (int y=0; y<HEIGHT; y++){
+    for (int x=0; x<WIDTH; x++){
+      
+      int indexOld = (y * WIDTH * 4) + (x * 4);
+      int indexNew = ((HEIGHT - y - 1) * WIDTH) + x;
+      imgData[indexNew].B = (unsigned char) img[indexOld + 0];
+      imgData[indexNew].G = (unsigned char) img[indexOld + 1];
+      imgData[indexNew].R = (unsigned char) img[indexOld + 2];
+      imgData[indexNew].A = (unsigned char) img[indexOld + 3];
+
+    }
+  }
+
+  int stride = cairo_format_stride_for_width (CAIRO_FORMAT_RGB24, WIDTH);
+
+  cairo_surface_t* surface_cairo =
+    cairo_image_surface_create_for_data ((unsigned char*)imgData, CAIRO_FORMAT_RGB24, WIDTH, HEIGHT, stride);
+
+
+  cairo_surface_write_to_png (surface_cairo, outfile);
+  cairo_surface_destroy (surface_cairo);
+
+  free(imgData);
+  /////////////////////////////////////////
+
+  free(img);
+  //Scene is destructed automatically ~SCEscene()
+
+  return 0;
+}

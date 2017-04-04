@@ -91,7 +91,8 @@ void KDnode::populate(KDnode* parent){
 	}
 };
 void KDnode::split(){
-	if(this->objects.size() > 10){
+	//stop splitting if reach certain size or depth
+	if(this->objects.size() > 10 && this->depth < 20){
 		//For current node, get long axis and mid point
 		(*this).getLongestAxis();
 		(*this).getNaiveMid();

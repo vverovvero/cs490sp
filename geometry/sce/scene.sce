@@ -31,4 +31,4 @@ TRIANGLE P1(100, 100, 100) P2(100, 100, 0) P3(100, 0, 0) Material(3)
 
 
 #INCLUDE Mesh(sce/humanoid.sce) Material(2) Scale(3,3,3) RotateY(20) Translate(50, 10, 50) 
-#INCLUDE Mesh(sce/bunny.sce) Material(2) 
+INCLUDE Mesh(sce/bunny.sce) Material(2) 

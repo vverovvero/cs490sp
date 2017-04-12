@@ -72,7 +72,7 @@ bool planeBoxOverlap(vector<float> _normal, vector<float> _vert, vector<float> _
 	//populate vmin and vmax
 	for(q=0; q<=2; q++){
 		v = _vert[q];
-		if(_normal[q]>0){
+		if(_normal[q]>0.0f){
 			_vmin[q]= -_maxbox[q] - v;
 			_vmax[q]= _maxbox[q] - v;
 		}
@@ -83,13 +83,13 @@ bool planeBoxOverlap(vector<float> _normal, vector<float> _vert, vector<float> _
 	}
 
 	//convert vectors to vec3
-	vec3 vmin = vectorToVec(_vmin);
-	vec3 vmax = vectorToVec(_vmax);
+	// vec3 vmin = vectorToVec(_vmin);
+	// vec3 vmax = vectorToVec(_vmax);
 
-	if(dotProduct(vectorToVec(_normal), vectorToVec(_vmin)) > 0){
+	if(dotProduct(vectorToVec(_normal), vectorToVec(_vmin)) > 0.0f){
 		return false; //0
 	}
-	if(dotProduct(vectorToVec(_normal), vectorToVec(_vmax)) >= 0){
+	if(dotProduct(vectorToVec(_normal), vectorToVec(_vmax)) >= 0.0f){
 		return true; //1
 	}
 	return false; //0
@@ -175,7 +175,7 @@ bool AXISTEST_Z12(float a, float b, float fa, float fb,
 	vector<float> _v1, vector<float> _v2, vector<float> _boxhalfsize){
 
 	float p1 = a*_v1[0] - b*_v1[1];
-	float p2 = a*_v2[0] - b*_v2[2];
+	float p2 = a*_v2[0] - b*_v2[1]; //bug fix
 	float min, max;
 
 	if(p2<p1){min = p2; max = p1;} else {min = p1; max = p2;}
@@ -228,6 +228,8 @@ bool triBoxOverlap(vec3 boxcenter, vec3 boxhalfsize, vector<vec3> triverts){
 	vector<float> _e0(3);
 	vector<float> _e1(3);
 	vector<float> _e2(3);
+
+	/* move everything so that the boxcenter is in (0,0,0) */
 
 	_v0 = vecToVector(subtract(triverts[0], boxcenter));
 	_v1 = vecToVector(subtract(triverts[1], boxcenter));
@@ -393,24 +395,59 @@ bool objectBB(Object obj, vec3 min, vec3 max){
 
 void TEST_INTERSECT(){
 	printf("hello world!\n");
-	Triangle tri = {
-		.point1 = {.x=1.0, .y=0.0, .z=1.0},
-		.point2 = {.x=1.0, .y=0.0, .z=-1.0},
-		.point3 = {.x=-1.0, .y=1.0, .z=-1.0},
+	Triangle tri1 = {
+		.point1 = {.x=-1.0, .y=1.0, .z=1.0},
+		.point2 = {.x=1.0, .y=1.0, .z=-1.0},
+		.point3 = {.x=1.0, .y=1.0, .z=1.0},
+		.matIndex = 0
+	};
+
+	Triangle tri2 = {
+		.point1 = {.x=-1.0, .y=1.0, .z=-1.0},
+		.point2 = {.x=-1.0, .y=-1.0, .z=-1.0},
+		.point3 = {.x=1.0, .y=-1.0, .z=-1.0},
+		.matIndex = 0
+	};
+
+	Triangle tri3 = {
+		.point1 = {.x=1.0, .y=1.0, .z=1.0},
+		.point2 = {.x=1.0, .y=1.0, .z=-1.0},
+		.point3 = {.x=1.0, .y=-1.0, .z=1.0},
+		.matIndex = 0
+	};
+
+	Triangle tri4 = {
+		.point1 = {.x=-1.0, .y=-1.0, .z=-1.0},
+		.point2 = {.x=1.0, .y=-1.0, .z=-1.0},
+		.point3 = {.x=-1.0, .y=-1.0, .z=1.0},
+		.matIndex = 0
+	};
+
+	Triangle tri5 = {
+		.point1 = {.x=-1.0, .y=1.0, .z=1.0},
+		.point2 = {.x=1.0, .y=-1.0, .z=1.0},
+		.point3 = {.x=-1.0, .y=-1.0, .z=1.0},
+		.matIndex = 0
+	};
+
+	Triangle tri6 = {
+		.point1 = {.x=-1.0, .y=1.0, .z=1.0},
+		.point2 = {.x=-1.0, .y=1.0, .z=-1.0},
+		.point3 = {.x=-1.0, .y=-1.0, .z=1.0},
 		.matIndex = 0
 	};
 
 	//intersects
-	// vec3 min = {
-	// 	.x =-1.0,
-	// 	.y =-1.0,
-	// 	.z =-1.0
-	// };
-	// vec3 max = {
-	// 	.x = 1.0,
-	// 	.y = 1.0,
-	// 	.z = 1.0
-	// };
+	vec3 min = {
+		.x =-1.0,
+		.y =-1.0,
+		.z =-1.0
+	};
+	vec3 max = {
+		.x = 1.0,
+		.y = 1.0,
+		.z = 1.0
+	};
 
 	//doesn't intersect
 	// vec3 min = {
@@ -425,18 +462,23 @@ void TEST_INTERSECT(){
 	// };
 
 	//intersects
-	vec3 min = {
-		.x =0.0,
-		.y =0.0,
-		.z =0.0
-	};
-	vec3 max = {
-		.x = 0.5,
-		.y = 0.5,
-		.z = 0.5
-	};
+	// vec3 min = {
+	// 	.x =0.0,
+	// 	.y =0.0,
+	// 	.z =0.0
+	// };
+	// vec3 max = {
+	// 	.x = 0.5,
+	// 	.y = 0.5,
+	// 	.z = 0.5
+	// };
 
-	printf("%d\n", triangleBB(tri, min, max));
+	printf("%d\n", triangleBB(tri1, min, max));
+	printf("%d\n", triangleBB(tri2, min, max));
+	printf("%d\n", triangleBB(tri3, min, max));
+	printf("%d\n", triangleBB(tri4, min, max));
+	printf("%d\n", triangleBB(tri5, min, max));
+	printf("%d\n", triangleBB(tri6, min, max));
 }
 
 

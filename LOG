@@ -17,7 +17,22 @@ referenced by index in the triangle structs
 -Need to fix parsing.  Now it's spring break
 
 3/28:
+-fix the scene parsing (using an intermediate binary file)
 
+4/4:
++fix the intersections, try a cube with a triangle in every location, or try a dodecahedron
++why do the missing triangles happen?
+-possibly add image checkpoint at every certain number of lines
+-next: move on to path tracing (do the lights)
+
+4/11: for the paths
+-Bokeh effect (wikipedia)
+-Synthetic Image generation with a Lens and ... (ACM)
+-A phenomological model for Bokeh Rendering
+-A realistic camera model for computer graphics (1995) (Craig Kolb)
+-cinematic paper in the references for Kolb
+
+-CUDA parallelization, or run on the zoo
 
 ---------------------------------------------------------------------
 /********************* Miscellaneous to do *************************/
@@ -164,24 +179,22 @@ Essentially, the unforeseen problems caused me to go through three versions of s
 
 /////
 
+
+-add timing for rendering
+-new splitting method for building kd-tree
 -add destructor for KDtree and KDnode
-
-
 -clean up SCEparser.h, functions should be defined in SCEparser.cpp
 -also clean up where to put scene intersection vs. kdtree intersection
-
 -replace reference to FLT_MAX with INFINITY macro
-
 -clean up intersect scene functions (ie. intersectBox)
-
 -add a low sample, high sample option to render loop, pass in as a command line arg
-
-
 
 
 -add materials
 -add Direct MIS, etc
 -add UV mapping?
+
+
 
 
 

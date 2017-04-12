@@ -95,5 +95,19 @@ python geometry/SCEparser.py scene1.sce scene1.bin
 /*********************** Acceleration ******************************/
 ---------------------------------------------------------------------
 
-A kd-tree acceleration structure will be implemented.
+A kd-tree acceleration structure is implemented.  The KDnode and KDtree classes can be found in SCEparser.h and SCEparser.cpp.
+
+To build the kd-tree, triangle-box accelerations must be tested for, and this adapted code is found in intersect.h and intersect.cpp, with sources cited.
+
+In main.cpp, intersectScene is modified as intersectSceneAccel, where only a shortened list of objects is searched.
+
+The kdtree is assembled after the scene object has been created.  The kdtree is passed as an argument alongside the scene object in the render loop.
+
+Notes on the kdtree:
+-how are split points selected
+-Maximum depth is currently at 20
+
+
+
+
 

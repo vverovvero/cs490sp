@@ -20,12 +20,14 @@ KDnode::KDnode(vec3 min, vec3 max, int depth){
 	this->depth = depth;
 	this->left = NULL;
 	this->right = NULL;
+	this->n_objects = 0;
 };
 void KDnode::init_root(SCEscene* scene){
 	//set root objects to scene objects
 	vector<struct Object>* scene_objects = (*scene).get_objects();
 	int i;
 	int size = (*scene_objects).size();
+	this->n_objects = size;
 	for(i=0; i<size; i++){
 		this->objects.push_back(&(*scene_objects)[i]);
 	}
@@ -45,9 +47,75 @@ void KDnode::getLongestAxis(){
 		this->split_axis = Z;
 	}
 };
-// void KDnode::getMid(axisType axis){
-// 	//assumes that min, max, and split_axis are initialized
-// };
+
+//helper function for getCenterMid
+void findMinMax(float *min, float *max, float f1, float f2, float f3){
+	//initialize min and max
+	*min = f1;
+	*max = f1;
+
+	if(f2 < *min){
+		*min = f2;
+	}
+	if(f3 < *min){
+		*min = f3;
+	}
+
+	if(f2 > *max){
+		*max = f2;
+	}
+	if(f3 > *max){
+		*max = f3;
+	}
+};
+//getCenterMid performs worse than getNaiveMid
+void KDnode::getCenterMid(){
+	//assumes that min, max, and split_axis are initialized
+	//also assumes node has objects
+	int i;
+	int size = this->n_objects;
+	if(size == 0){
+		//set split naively if there are no objects
+		//this should never get called
+		getNaiveMid();
+	}
+	else{
+		float SumX = 0.0;
+		float SumY = 0.0;
+		float SumZ = 0.0;
+		float min, max;
+		vec3 center;
+		for(i=0; i<size; i++){
+			Object* obj = this->objects[i];
+			//get the center
+			if(obj->type == SPHERE){
+				Sphere* sph = (Sphere*) obj->object;
+				SumX += sph->point.x;
+				SumY += sph->point.y;
+				SumZ += sph->point.z;
+			}
+			else if(obj->type == TRIANGLE){
+				Triangle* tri = (Triangle*) obj->object;
+				findMinMax(&min, &max, tri->point1.x, tri->point2.x, tri->point3.x);
+				SumX += min + (max - min)/2;
+				findMinMax(&min, &max, tri->point1.y, tri->point2.y, tri->point3.y);
+				SumY += min + (max - min)/2;
+				findMinMax(&min, &max, tri->point1.z, tri->point2.z, tri->point3.z);
+				SumZ += min + (max - min)/2;
+			}
+			else{
+				printf("Impossible object\n");
+			}
+		}
+		//set split as the average
+		vec3 split = {
+			.x = (float) SumX/size,
+			.y = (float) SumY/size,
+			.z = (float) SumZ/size
+		};
+		this->split_point = split;
+	}
+};
 void KDnode::getNaiveMid(){
 	//assumes that min, max, and split_axis are initialized
 	vec3 split = {
@@ -82,20 +150,22 @@ pair<vec3, vec3> KDnode::getBoundsFromMid(){
 void KDnode::populate(KDnode* parent){
 	//for each object pointer in parent, add to this node if intersects
 	int i;
-	int size = parent->objects.size();
+	int size = parent->n_objects;
 	for(i=0; i<size; i++){
 		Object* obj = parent->objects[i];
 		if(objectBB(*obj, this->min, this->max)){
 			this->objects.push_back(obj);
+			this->n_objects++;
 		}
 	}
 };
 void KDnode::split(){
 	//stop splitting if reach certain size or depth
-	if(this->objects.size() > 10 && this->depth < 20){
+	if(this->n_objects > 10 && this->depth < 25){
 		//For current node, get long axis and mid point
 		(*this).getLongestAxis();
 		(*this).getNaiveMid();
+		printf("Split point(%.2f, %.2f, %.2f)\n", split_point.x, split_point.y, split_point.z);
 		//get the bounds for left and right children
 		pair<vec3, vec3> midBounds = (*this).getBoundsFromMid();
 		vec3 midMin = midBounds.first;
@@ -119,7 +189,7 @@ void KDnode::print(){
 		(this->max).x, (this->max).y, (this->max).z);
 	//print the objects
 	int i;
-	int size = this->objects.size();
+	int size = this->n_objects;
 	for(i=0; i<size; i++){
 		Object* obj = this->objects[i];
 		if(obj->type == SPHERE){

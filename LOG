@@ -179,19 +179,27 @@ Essentially, the unforeseen problems caused me to go through three versions of s
 
 /////
 
+To do by 4/18:
 
--add timing for rendering
--new splitting method for building kd-tree
+-thinking about threading?
+
++add timing for rendering
+x-new splitting method for building kd-tree
 -add destructor for KDtree and KDnode
+-add way to input boundMin and boundMax, so not hard coded
 -clean up SCEparser.h, functions should be defined in SCEparser.cpp
 -also clean up where to put scene intersection vs. kdtree intersection
 -replace reference to FLT_MAX with INFINITY macro
 -clean up intersect scene functions (ie. intersectBox)
 -add a low sample, high sample option to render loop, pass in as a command line arg
-
+-add acceleration option
 
 -add materials
 -add Direct MIS, etc
+-fix the sampling used for shooting the ray?
+
+-look into camera lens distribution (read 2 papers and textbook)
+
 -add UV mapping?
 
 

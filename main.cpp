@@ -17,10 +17,16 @@
 //For debugging with gdb
 // clang++ -std=c++11 -stdlib=libc++ -g -o main -L/usr/local/lib/cairo/ -lcairo main.cpp -I/usr/local/include/cairo/
 
+/********************************** Sources **************************************/
+//Timing:
+//http://stackoverflow.com/questions/459691/best-timing-method-in-c
+
 /***************************** Headers and Structs *******************************/
 
 #include "main.h"
 #include "SCEparser.h"
+
+#include <time.h>
 
 #include <stack>
 using std::stack;
@@ -623,11 +629,15 @@ void tone_map(float* img, int size){
 
 
 int main (int argc, char const *argv[]){
+
   //Confirm there is a scene file
   if(argc != 3){
     fprintf(stderr, "Usage: ./main <.bin file> <.png name>\n");
     return -1;
   }
+
+  //begin timing
+  clock_t start = clock(), diff;
 
   //Grab command line args
   char infile[50], outfile[50];
@@ -668,7 +678,7 @@ int main (int argc, char const *argv[]){
   };
   KDtree kdtree = KDtree(boundMin, boundMax, &scene);
   KDnode* root = kdtree.get_kdtree();
-  (*root).print();
+  // (*root).print();
 
   //initalize random number generator
   srand48(time(NULL));
@@ -712,6 +722,11 @@ int main (int argc, char const *argv[]){
 
   free(img);
   //Scene is destructed automatically ~SCEscene()
+
+  //end timing
+  diff = clock() - start;
+  int msec = diff * 1000 / CLOCKS_PER_SEC;
+  printf("Time taken %d seconds %d milliseconds\n", msec/1000, msec%1000);
 
   return 0;
 }

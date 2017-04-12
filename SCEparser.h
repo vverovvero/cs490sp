@@ -107,6 +107,7 @@ private:
 	vec3 min;
 	vec3 max;
 	vector<struct Object*> objects;
+	int n_objects;
 	vec3 split_point;
 	axisType split_axis;
 	int depth;
@@ -116,9 +117,7 @@ public:
 	KDnode(vec3 min, vec3 max, int depth);
 	void init_root(SCEscene* scene);
 	void getLongestAxis();
-	// void getMid(axisType axis){
-	// 	//assumes that min, max, and split_axis are initialized
-	// };
+	void getCenterMid(); //unused
 	void getNaiveMid();
 	pair<vec3, vec3> getBoundsFromMid();
 	void populate(KDnode* parent);

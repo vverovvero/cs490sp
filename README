@@ -105,7 +105,14 @@ The kdtree is assembled after the scene object has been created.  The kdtree is 
 
 Notes on the kdtree:
 -how are split points selected
--Maximum depth is currently at 20
+-Maximum depth is currently at 25
+
+
+Split points are selected by naively dividing the box in half along its longest axis.  This method yields consistently faster results.  
+
+Interestingly, splitting by getting the average middle point did not perform well, and was significantly (in some case, by a factof of 4) slower than naive splitting.  Why would this be?
+
+According to some research online, the best way to build the kd-tree is by using the SAH heuristic.
 
 
 

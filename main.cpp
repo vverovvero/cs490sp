@@ -20,6 +20,8 @@
 /********************************** Sources **************************************/
 //Timing:
 //http://stackoverflow.com/questions/459691/best-timing-method-in-c
+//Threading:
+//http://stackoverflow.com/questions/7686939/c-simple-return-value-from-stdthread
 
 /***************************** Headers and Structs *******************************/
 
@@ -29,8 +31,14 @@
 #include <time.h>
 
 #include <stack>
-using std::stack;
+#include <thread>
+#include <iostream>
+// #include <future>
 
+using namespace std;
+
+
+static const int num_threads = 4;
 
 /***************************** Forward declarations *******************************/
 
@@ -39,6 +47,8 @@ float sphereIntersection(Sphere* sphere, Ray* ray);
 vec3 sphereNormal(Sphere* sphere, vec3 pos);
 vec3 triNormal(Triangle* tri);
 float triIntersection(Triangle* tri, Ray* ray);
+// float* renderThreaded(Scene* scene, KDtree* tree);
+void writeColor(float* img, vec3 color, int x, int y);
 float* render(Scene* scene, KDtree* tree);
 vec3 trace(Ray* ray, Scene* scene, KDtree* tree, vec3 *pointAtTime, float *contribution);
 Dist intersectSceneAccel(Ray *ray, KDnode* node);
@@ -470,11 +480,93 @@ float* render(Scene* scene, KDtree *tree) {
         //     color = add(color, trace(&ray, scene, tree, 0));
 
             //One ray per pixel; no antialiasing
-            ray.point = camera->point;
-            vec3 xcomp = scale(vpRight, ((x) * pixelWidth) - halfWidth);
-            vec3 ycomp = scale(vpUp, ((y) * pixelHeight) - halfHeight);
-            ray.vector = unitVector(add3(eyeVector, xcomp, ycomp));
+            // ray.point = camera->point;
+            // vec3 xcomp = scale(vpRight, ((x) * pixelWidth) - halfWidth);
+            // vec3 ycomp = scale(vpUp, ((y) * pixelHeight) - halfHeight);
+            // ray.vector = unitVector(add3(eyeVector, xcomp, ycomp));
+            // // printf("Ray point (%f, %f, %f); ray vector (%f, %f, %f)\n", ray.point.x, ray.point.y, ray.point.z, ray.vector.x, ray.vector.y, ray.vector.z);
+            
+            // //CAMERA DEPTH OF FIELD: One ray per pixel; no antialiasing
+            // //assume aperture size (radius?) of 1 unit, focal length of 40 units
+            // float apertureSize = 1.0;
+            // float focalDepth = 80.0;
+            // //generate random sample, 
+            // float disk_u1 = drand48();
+            // float disk_u2 = drand48();
+            // float uniform_r = sqrt(disk_u1);
+            // float uniform_theta = 2.0*PI*disk_u2;
+            // //transform polar to cartesian
+            // float uniform_x = uniform_r*cos(uniform_theta);
+            // float uniform_y = uniform_r*sin(uniform_theta);
+            // //get disk sample
+            // vec3 uniform_diskSample = {
+            //   .x = uniform_x,
+            //   .y = uniform_y,
+            //   .z = 0.0
+            // };
+            // vec3 apertureOffset = scale(uniform_diskSample, apertureSize);
+            // // offset ray origin with aperture offset
+            // ray.point = add(camera->point, apertureOffset);
+            // //get standard ray direction
+            // vec3 xcomp = scale(vpRight, ((x) * pixelWidth) - halfWidth);
+            // vec3 ycomp = scale(vpUp, ((y) * pixelHeight) - halfHeight);
+            // ray.vector = add3(eyeVector, xcomp, ycomp);
+            // //scale the ray direction by focal depth plane
+            // ray.vector = scale(ray.vector, focalDepth);
+            // //subtract apertureOffset
+            // ray.vector = subtract(ray.vector, apertureOffset);
+            // //normalize ray vector
+            // ray.vector = unitVector(ray.vector);
+            // // printf("Ray point (%f, %f, %f); ray vector (%f, %f, %f)\n", ray.point.x, ray.point.y, ray.point.z, ray.vector.x, ray.vector.y, ray.vector.z);
+
+
+            //PBRT CAMERA DEPTH OF FIELD
+            //lensRadius and focalDepth assumptions:
+            float lensRadius = 3.0;
+            float focalDepth = 80.0;
+            if(lensRadius > 0.0){
+              //generate random sample, 
+              float disk_u1 = drand48();
+              float disk_u2 = drand48();
+              float uniform_r = sqrt(disk_u1);
+              float uniform_theta = 2.0*PI*disk_u2;
+              //transform polar to cartesian
+              float lensU = uniform_r*cos(uniform_theta);
+              float lensV = uniform_r*sin(uniform_theta);
+              //scale by lens radius
+              lensU *= lensRadius;
+              lensV *= lensRadius;
+              //get disk sample
+              vec3 uniform_diskSample = {
+                .x = lensU,
+                .y = lensV,
+                .z = 0.0
+              };
+              //Update ray.point with lens sample
+              ray.point = add(camera->point, uniform_diskSample);
+              //Set standard ray direction
+              vec3 xcomp = scale(vpRight, ((x) * pixelWidth) - halfWidth);
+              vec3 ycomp = scale(vpUp, ((y) * pixelHeight) - halfHeight);
+              ray.vector = unitVector(add3(eyeVector, xcomp, ycomp));
+              //Compute point on plane of focus
+              float ft = fabs(focalDepth - camera->point.z)/ray.vector.z;
+              vec3 Pfocus = subtract(camera->point, scale(ray.vector, ft));
+              // printf("Point of focus (%f, %f, %f)\n", Pfocus.x, Pfocus.y, Pfocus.z);
+              //Update ray
+              // ray.vector = subtract(Pfocus, uniform_diskSample);
+              // ray.vector = unitVector(add(eyeVector, ray.vector));
+              ray.vector = unitVector(subtract(Pfocus, ray.point));
+            }
+            //if lens is pinhole, then standard ray.point and direction calculation
+            else{
+              ray.point = camera->point;
+              vec3 xcomp = scale(vpRight, ((x) * pixelWidth) - halfWidth);
+              vec3 ycomp = scale(vpUp, ((y) * pixelHeight) - halfHeight);
+              ray.vector = unitVector(add3(eyeVector, xcomp, ycomp));
+            }
             // printf("Ray point (%f, %f, %f); ray vector (%f, %f, %f)\n", ray.point.x, ray.point.y, ray.point.z, ray.vector.x, ray.vector.y, ray.vector.z);
+
+
             //Direct lighting
             vec3 pointAtTime = ray.point; //first intersection point is ray origin
             float contribution = 0.0; //we assign roulette value as contribution
@@ -556,6 +648,9 @@ float* render(Scene* scene, KDtree *tree) {
   return img;
 }
 
+/***************************** Threaded Render *******************************/
+
+
 
 /***************************** Tone map *******************************/
 
@@ -577,56 +672,9 @@ void tone_map(float* img, int size){
 
 /***************************** Main loop *******************************/
 
-// //testing
-// int main(int argc, char const *argv[])
-// {
-//   // TEST_INTERSECT();
-
-//   //Confirm there is a scene file
-//   if(argc != 3){
-//     fprintf(stderr, "Usage: ./main <.bin file> <.png name>\n");
-//     return -1;
-//   }
-
-//   //Grab command line args
-//   char infile[50], outfile[50];
-//   strcpy(infile, argv[1]);
-//   strcpy(outfile, argv[2]);
-
-//    // Initialize SCEscene and Parser
-//   SCEscene scene = SCEscene();
-//   Parse parse = Parse();
-
-//   //Call parser
-//   if(parse.parseSCE(infile, &scene) != 0){
-//     fprintf(stderr, "Parsing failed\n");
-//     return -1;
-//   }
-
-//   // Build the scene
-//   scene.build_scene();
-
-//   printf("Sanity check the scene\n");
-//   scene.print_scene();
-
-//   //build the kd tree
-//   vec3 boundMin = {
-//     .x = -500.0,
-//     .y = -500.0,
-//     .z = -500.0
-//   };
-//   vec3 boundMax = {
-//     .x = 500.0,
-//     .y = 500.0,
-//     .z = 500.0
-//   };
-//   KDtree kdtree = KDtree(boundMin, boundMax, &scene);
-//   KDnode* root = kdtree.get_kdtree();
-//   (*root).print();
-
-//   return 0;
+// void call_from_thread(int i) {
+//   std::cout << "Hello World from " << i << std::endl;
 // }
-
 
 int main (int argc, char const *argv[]){
 
@@ -687,6 +735,33 @@ int main (int argc, char const *argv[]){
   printf("Getting the scene pointer\n");
   float* img = render(s_scene_ptr, &kdtree);
   
+  /////////TESTING//////////
+  // //make array
+  // std::thread t[num_threads];
+
+  // for(int i=0; i<num_threads; i++){
+  //   t[i] = std::thread(call_from_thread, i);
+  // }
+
+  // for(int i=0; i<num_threads; i++){
+  //   t[i].join();
+  // }
+  ///////////////////////////
+
+  /////////THREADED RENDER////////
+  //render each quarter and tone map each quarter
+
+  thread t[num_threads];
+
+
+
+
+
+  /////////////////////////////////
+
+
+
+
 
   tone_map(img, HEIGHT * WIDTH * 4);
 

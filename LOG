@@ -28,12 +28,18 @@ referenced by index in the triangle structs
 4/11: for the paths
 -Bokeh effect (wikipedia)
 -Synthetic Image generation with a Lens and ... (ACM)
+http://dl.acm.org/citation.cfm?id=357300
 -A phenomological model for Bokeh Rendering
+http://dl.acm.org/citation.cfm?id=1242155
 -A realistic camera model for computer graphics (1995) (Craig Kolb)
+http://dl.acm.org/citation.cfm?id=218463
 -cinematic paper in the references for Kolb
 
--CUDA parallelization, or run on the zoo
-
+4/18:
+-note on DOF: currently assumes camera is positioned at more+++ z position than scene.  Generalize to subtract Pfocus from camera is z is more +, or add Pfocus to camera if z is less +
+-refactor code, separate out..
+-variance estimation to control how many samples are produced
+(ie. for black regions, wouldn't want to sample more than once)
 ---------------------------------------------------------------------
 /********************* Miscellaneous to do *************************/
 ---------------------------------------------------------------------
@@ -179,12 +185,27 @@ Essentially, the unforeseen problems caused me to go through three versions of s
 
 /////
 
-To do by 4/18:
-
--thinking about threading?
+To do by 4/14:
 
 +add timing for rendering
 x-new splitting method for building kd-tree
+
+***CODE CLEANUP:
+-thinking about threading/forking. 4 children processes?
+-WHY DOESN'T C++ THREAD WORK???  Jay's Mac also complains
+-try forking
+
+Threading sources:
+https://solarianprogrammer.com/2011/12/16/cpp-11-thread-tutorial/
+http://stackoverflow.com/questions/18308908/error-creating-stdthread-on-mac-os-x-with-clang-attempt-to-use-a-deleted-fun
+http://stackoverflow.com/questions/29191445/c-stdthread-attempt-to-use-a-deleted-function
+http://www.linuxprogrammingblog.com/threads-and-fork-think-twice-before-using-them
+http://stackoverflow.com/questions/19774778/when-is-it-necessary-to-use-use-the-flag-stdlib-libstdc
+
+GOod makefile source:
+http://www.cs.colby.edu/maxwell/courses/tutorials/maketutor/
+
+
 -add destructor for KDtree and KDnode
 -add way to input boundMin and boundMax, so not hard coded
 -clean up SCEparser.h, functions should be defined in SCEparser.cpp
@@ -193,17 +214,35 @@ x-new splitting method for building kd-tree
 -clean up intersect scene functions (ie. intersectBox)
 -add a low sample, high sample option to render loop, pass in as a command line arg
 -add acceleration option
+-add HEIGHT and WIDTH to be specified by user, separate from main.h
 
--add materials
+
+To do by 4/18:
 -add Direct MIS, etc
--fix the sampling used for shooting the ray?
-
 -look into camera lens distribution (read 2 papers and textbook)
+-add soft shadows (lighting models?)
+-add materials
 
--add UV mapping?
+***DOF READING:
+-review p.665 - 668 PBRT
+-Read Ch.6 on camera models in PBRT
+-Review Kolb paper
+-Skim other two papers
+-be able to explain how implementation mimics the lens, without needing to implement refraction
 
+***DOF IMPLEMENTATION
++have basic working modification in the render loop
+-how can I control the effect?
 
+Posts to consider:
+https://computergraphics.stackexchange.com/questions/4344/depth-of-field-in-path-tracing-what-do-i-do-with-the-secondary-ray/4346
 
+Current implementation follows comments from:
+http://www.cs.unc.edu/~jpool/COMP870/Assignment2/
+
+Other:
+-add materials
+-fix the sampling used for shooting the ray?
 
 
 

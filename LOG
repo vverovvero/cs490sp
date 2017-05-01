@@ -206,17 +206,6 @@ GOod makefile source:
 http://www.cs.colby.edu/maxwell/courses/tutorials/maketutor/
 
 
--add destructor for KDtree and KDnode
--add way to input boundMin and boundMax, so not hard coded
--clean up SCEparser.h, functions should be defined in SCEparser.cpp
--also clean up where to put scene intersection vs. kdtree intersection
--replace reference to FLT_MAX with INFINITY macro
--clean up intersect scene functions (ie. intersectBox)
--add a low sample, high sample option to render loop, pass in as a command line arg
--add acceleration option
--add HEIGHT and WIDTH to be specified by user, separate from main.h
-
-
 To do by 4/18:
 -add Direct MIS, etc
 -look into camera lens distribution (read 2 papers and textbook)
@@ -244,5 +233,30 @@ Other:
 -add materials
 -fix the sampling used for shooting the ray?
 
+
+//////
+5/1: Code cleanup to do
+USER INPUTS
+---factor out DOF information; put into camera struct and user input scene (lensRadius and focalDepth)
+---add materials like glass
+---add soft shadows for lighting
+
+---add num threads as user option
+---add way to input boundMin and boundMax, so not hard coded
+---add a low sample, high sample option to render loop, pass in as a command line arg
+---add acceleration option
+
+
+CODE CLEANUP
++++add threaded render (4 threads)
+---add a check that num_threads divides HEIGHT (cap is probably ~32, 64)
++++free the image chunks
+---add destructor for KDtree and KDnode
+---clean up SCEparser.h, functions should be defined in SCEparser.cpp
+---also clean up where to put scene intersection vs. kdtree intersection
+---replace reference to FLT_MAX with INFINITY macro
+---clean up intersect scene functions (ie. intersectBox)
+---add HEIGHT and WIDTH to be specified by user, separate from main.h
+---add variance calculation for sampling
 
 

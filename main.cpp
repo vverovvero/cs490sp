@@ -18,17 +18,17 @@
 // clang++ -std=c++11 -stdlib=libc++ -g -o main -L/usr/local/lib/cairo/ -lcairo main.cpp -I/usr/local/include/cairo/
 
 /********************************** Sources **************************************/
-//Timing:
+//Serial Timing:
 //http://stackoverflow.com/questions/459691/best-timing-method-in-c
-//Threading:
-//http://stackoverflow.com/questions/7686939/c-simple-return-value-from-stdthread
+//Threaded timing:
+//http://stackoverflow.com/questions/2962785/c-using-clock-to-measure-time-in-multi-threaded-programs
+//http://stackoverflow.com/questions/5167269/clock-gettime-alternative-in-mac-os-x
+//https://gist.github.com/jbenet/1087739
 
 /***************************** Headers and Structs *******************************/
 
 #include "main.h"
 #include "SCEparser.h"
-
-#include <time.h>
 
 #include <stack>
 #include <thread>
@@ -37,8 +37,34 @@
 
 using namespace std;
 
+static const int num_threads = 32;
 
-static const int num_threads = 4;
+/********************************** Timing ***************************************/
+
+#include <time.h>
+#include <sys/time.h>
+
+#ifdef __MACH__
+#include <mach/clock.h>
+#include <mach/mach.h>
+#endif
+
+
+void current_utc_time(struct timespec *ts) {
+
+#ifdef __MACH__ // OS X does not have clock_gettime, use clock_get_time
+  clock_serv_t cclock;
+  mach_timespec_t mts;
+  host_get_clock_service(mach_host_self(), CALENDAR_CLOCK, &cclock);
+  clock_get_time(cclock, &mts);
+  mach_port_deallocate(mach_task_self(), cclock);
+  ts->tv_sec = mts.tv_sec;
+  ts->tv_nsec = mts.tv_nsec;
+#else
+  clock_gettime(CLOCK_REALTIME, ts);
+#endif
+
+}
 
 /***************************** Forward declarations *******************************/
 
@@ -47,14 +73,15 @@ float sphereIntersection(Sphere* sphere, Ray* ray);
 vec3 sphereNormal(Sphere* sphere, vec3 pos);
 vec3 triNormal(Triangle* tri);
 float triIntersection(Triangle* tri, Ray* ray);
-// float* renderThreaded(Scene* scene, KDtree* tree);
+void renderThreaded(Scene* scene, KDtree* tree, float* img, int lo_index, int hi_index);
 void writeColor(float* img, vec3 color, int x, int y);
-float* render(Scene* scene, KDtree* tree);
+void render(Scene* scene, KDtree* tree, float* img);
 vec3 trace(Ray* ray, Scene* scene, KDtree* tree, vec3 *pointAtTime, float *contribution);
 Dist intersectSceneAccel(Ray *ray, KDnode* node);
 Dist intersectScene(Ray* ray, Scene* scene);
 int isLightVisible(vec3 point, Scene* scene, KDtree* tree, vec3 light);
 vec3 surface(Ray* ray, Scene* scene, KDtree* tree, Object* object, vec3 pointAtTime, vec3 normal, float *contribution);
+void stitch(float *img, float *chunk, int width, int lo_index, int chunk_size);
 
 
 /***************************** Path tracing functions *******************************/
@@ -432,9 +459,7 @@ vec3 trace(Ray* ray, Scene* scene, KDtree* tree, vec3 *pointAtTime, float* contr
   return surface(ray, scene, tree, object, *pointAtTime, objectNormal(object, *pointAtTime), contribution);
 }
 
-float* render(Scene* scene, KDtree *tree) {
-
-  float* img = (float*)malloc(sizeof(float) * HEIGHT * WIDTH * 4);
+void render(Scene* scene, KDtree *tree, float* img) {
 
   Camera* camera = scene->camera;
 
@@ -519,6 +544,182 @@ float* render(Scene* scene, KDtree *tree) {
             // ray.vector = unitVector(ray.vector);
             // // printf("Ray point (%f, %f, %f); ray vector (%f, %f, %f)\n", ray.point.x, ray.point.y, ray.point.z, ray.vector.x, ray.vector.y, ray.vector.z);
 
+
+            //PBRT CAMERA DEPTH OF FIELD
+            //lensRadius and focalDepth assumptions:
+            float lensRadius = 3.0;
+            float focalDepth = 50.0;
+            if(lensRadius > 0.0){
+              //generate random sample, 
+              float disk_u1 = drand48();
+              float disk_u2 = drand48();
+              float uniform_r = sqrt(disk_u1);
+              float uniform_theta = 2.0*PI*disk_u2;
+              //transform polar to cartesian
+              float lensU = uniform_r*cos(uniform_theta);
+              float lensV = uniform_r*sin(uniform_theta);
+              //scale by lens radius
+              lensU *= lensRadius;
+              lensV *= lensRadius;
+              //get disk sample
+              vec3 uniform_diskSample = {
+                .x = lensU,
+                .y = lensV,
+                .z = 0.0
+              };
+              //Update ray.point with lens sample
+              ray.point = add(camera->point, uniform_diskSample);
+              //Set standard ray direction
+              vec3 xcomp = scale(vpRight, ((x) * pixelWidth) - halfWidth);
+              vec3 ycomp = scale(vpUp, ((y) * pixelHeight) - halfHeight);
+              ray.vector = unitVector(add3(eyeVector, xcomp, ycomp));
+              //Compute point on plane of focus
+              float ft = fabs(focalDepth - camera->point.z)/ray.vector.z;
+              vec3 Pfocus = subtract(camera->point, scale(ray.vector, ft));
+              // printf("Point of focus (%f, %f, %f)\n", Pfocus.x, Pfocus.y, Pfocus.z);
+              //Update ray
+              // ray.vector = subtract(Pfocus, uniform_diskSample);
+              // ray.vector = unitVector(add(eyeVector, ray.vector));
+              ray.vector = unitVector(subtract(Pfocus, ray.point));
+            }
+            //if lens is pinhole, then standard ray.point and direction calculation
+            else{
+              ray.point = camera->point;
+              vec3 xcomp = scale(vpRight, ((x) * pixelWidth) - halfWidth);
+              vec3 ycomp = scale(vpUp, ((y) * pixelHeight) - halfHeight);
+              ray.vector = unitVector(add3(eyeVector, xcomp, ycomp));
+            }
+            // printf("Ray point (%f, %f, %f); ray vector (%f, %f, %f)\n", ray.point.x, ray.point.y, ray.point.z, ray.vector.x, ray.vector.y, ray.vector.z);
+
+
+            //Direct lighting
+            vec3 pointAtTime = ray.point; //first intersection point is ray origin
+            float contribution = 0.0; //we assign roulette value as contribution
+            float throughput = 1.0;
+            color = add(color, trace(&ray, scene, tree, &pointAtTime, &contribution));
+
+            // color = ZERO;//for Indirect test only
+            //////////////Indirect lighting/////////////////////
+            vec3 indirect_color = ZERO;
+            vec3 indirect_roulette = ZERO;
+            vec3 indirect_direction = ZERO;
+            int num_samples = 0.0;
+            float u1, u2;
+            float Russian_Roulette = contribution; //calculate based on reflectance value
+            // Ray indirect_ray;
+            //While random chance > termination probability, shoot more rays
+            while((num_samples < 3) || (drand48() < Russian_Roulette)){
+              // printf("Russian roulette passed !\n");
+              //Construct indirect ray
+              //what is indirect_ray?
+              ray.point = pointAtTime;
+              //Monte carlo sample the new direction:
+              u1 = drand48();
+              u2 = drand48();
+              indirect_direction.x = ray.point.x + cos(2*PI*u2) * sqrt(1-u1*u1);
+              indirect_direction.y = ray.point.y + sin(2*PI*u2) * sqrt(1-u1*u1);
+              indirect_direction.z = ray.point.z + u1;
+              //Get new ray's direction
+              ray.vector = unitVector(subtract(indirect_direction, ray.point)); 
+              // printf("INDIRECT Ray point (%f, %f, %f); ray vector (%f, %f, %f)\n", ray.point.x, ray.point.y, ray.point.z, ray.vector.x, ray.vector.y, ray.vector.z);
+              //what is current throughput?
+              throughput = (1.0/PI) * throughput; //throughput is based off of diffuse reflectance
+
+              // printf("new ray.point = (%f, %f, %f); new ray.vector = (%f, %f, %f)\n", ray.point.x, ray.point.y, ray.point.z, ray.vector.x, ray.vector.y, ray.vector.z);
+              
+              //Scale the first two bounces by throughput
+              if(num_samples < 3){
+                // indirect_color = add(indirect_color, trace(&ray, scene, tree, &pointAtTime));
+                indirect_color = add(indirect_color, scale(trace(&ray, scene, tree, &pointAtTime, &contribution), throughput));
+              }
+              //don't scale roulette, due to averaging later
+              else{
+                indirect_roulette = add(indirect_roulette, trace(&ray, scene, tree, &pointAtTime, &contribution));
+              }
+              num_samples++;
+
+              //Calculate roulette value for next go
+              Russian_Roulette = contribution;
+              // printf("Russian_Roulette = %f\n", Russian_Roulette);
+            }
+            if(num_samples > 2){
+              // printf("at x=%d y=%d, BEFORE SCALING Indirect Color is (%f, %f, %f)\n", x, y, indirect_color.x, indirect_color.y, indirect_color.z);
+              float indirect_scale = 1.0/(num_samples-2.0);
+              // printf("indirect_scale = %f\n", indirect_scale);
+              indirect_roulette = scale(indirect_roulette, indirect_scale);
+              if(indirect_roulette.x != 0 && indirect_roulette.y != 0 && indirect_roulette.z != 0){
+                // printf("at x=%d y=%d, Indirect roulette is (%f, %f, %f)\n", x, y, indirect_roulette.x, indirect_roulette.y, indirect_roulette.z);
+              }
+              //Total color is:
+              color = add(color, indirect_color); //direct plus 2 bounces
+              color = add(color, indirect_roulette); //for roulette passes
+
+            }
+            ////////////////////////////////////////////
+        //   }
+        // }
+
+        // printf("at x=%d y=%d, Color is (%f, %f, %f)\n", x, y, color.x, color.y, color.z);
+        color = scale(color, 0.04);
+
+        int index = (x * 4) + (y * width * 4);
+        // printf("index is :%d\n", index);
+        img[index + 0] = 0.0f;
+        img[index + 1] = color.x;
+        img[index + 2] = color.y;
+        img[index + 3] = color.z;
+
+    }
+  }
+}
+
+/***************************** Threaded Render *******************************/
+void renderThreaded(Scene* scene, KDtree* tree, float* img, int lo_index, int hi_index){
+  printf("renderThreaded, from lo_index %d to hi_index %d\n", lo_index, hi_index);
+
+  Camera* camera = scene->camera;
+
+  vec3 eyeVector = unitVector(subtract(camera->toPoint, camera->point));
+  vec3 vpRight = unitVector(crossProduct(eyeVector, camera->up));
+  vec3 vpUp = unitVector(crossProduct(vpRight, eyeVector));
+
+  float height = (float) HEIGHT;
+  float width = (float) WIDTH;
+
+  float fovRadians = PI * (camera->fieldOfView / 2.0f) / 180.0f;
+  float heightWidthRatio = height / width;
+  float halfWidth = tanf(fovRadians);
+  float halfHeight = heightWidthRatio * halfWidth;
+  float camerawidth = halfWidth * 2.0f;
+  float cameraheight = halfHeight * 2.0f;
+  float pixelWidth = camerawidth / (width - 1.0f);
+  float pixelHeight = cameraheight / (height - 1.0f);
+
+  // int path_i; //keep track of bounce i
+
+  Ray ray;
+  // ray.point = camera->point;
+
+  for (int x = 0; x < WIDTH; x++) {
+    printf("Rendering x row: %d\n", x);
+    //reset img_y counter
+    int img_y = 0;
+    for (int y = lo_index; y < hi_index; img_y++, y++) {
+
+        // For Assign 6, brute-force antialiasing with 25 samples/pixel
+        vec3 color = ZERO;
+
+        // for (float s = -.4f; s < .6f; s+=.2f) {
+        //   for (float r = -.4f; r < .6; r +=.2f) {
+        //
+            // vec3 xcomp = scale(vpRight, ((x+s) * pixelWidth) - halfWidth);
+            // vec3 ycomp = scale(vpUp, ((y+r) * pixelHeight) - halfHeight);
+        
+            // ray.vector = unitVector(add3(eyeVector, xcomp, ycomp));
+        //
+        //     // use the vector generated to raytrace the scene, returning a color
+        //     // as a `{x, y, z}` vector of RGB values
+        //     color = add(color, trace(&ray, scene, tree, 0));
 
             //PBRT CAMERA DEPTH OF FIELD
             //lensRadius and focalDepth assumptions:
@@ -637,7 +838,8 @@ float* render(Scene* scene, KDtree *tree) {
         // printf("at x=%d y=%d, Color is (%f, %f, %f)\n", x, y, color.x, color.y, color.z);
         color = scale(color, 0.04);
 
-        int index = (x * 4) + (y * width * 4);
+        int index = (x * 4) + (img_y * width * 4);
+        // printf("index is :%d\n", index);
         img[index + 0] = 0.0f;
         img[index + 1] = color.x;
         img[index + 2] = color.y;
@@ -645,12 +847,16 @@ float* render(Scene* scene, KDtree *tree) {
 
     }
   }
-  return img;
 }
 
-/***************************** Threaded Render *******************************/
+//for stitching in an image chunk
+void stitch(float *img, float *chunk, int width, int lo_index, int chunk_size){
+  int img_index = width * lo_index * 4;
+  for(int i=0; i<chunk_size; i++, img_index++){
+    img[img_index] = chunk[i];
+  }
 
-
+}
 
 /***************************** Tone map *******************************/
 
@@ -684,8 +890,11 @@ int main (int argc, char const *argv[]){
     return -1;
   }
 
+  //Confirm num threads is okay
+
   //begin timing
-  clock_t start = clock(), diff;
+  struct timespec start, end;
+  current_utc_time(&start);
 
   //Grab command line args
   char infile[50], outfile[50];
@@ -732,8 +941,14 @@ int main (int argc, char const *argv[]){
   srand48(time(NULL));
 
   // This is MALLOCED!!
-  printf("Getting the scene pointer\n");
-  float* img = render(s_scene_ptr, &kdtree);
+  // printf("Getting the scene pointer\n");
+  // float* img = (float*)malloc(sizeof(float) * HEIGHT * WIDTH * 4);
+  // thread t1(render, s_scene_ptr, &kdtree, img);
+  // t1.join();
+
+  // tone_map(img, HEIGHT * WIDTH * 4);
+
+  // printf("Rendered! \n");
   
   /////////TESTING//////////
   // //make array
@@ -749,23 +964,50 @@ int main (int argc, char const *argv[]){
   ///////////////////////////
 
   /////////THREADED RENDER////////
-  //render each quarter and tone map each quarter
+  //render each image chunk, tone map each chunk
+  printf("Starting threaded render!  Num_threads: %d\n", num_threads);
 
   thread t[num_threads];
+  float *img_chunk[num_threads];
 
+  int max_height = HEIGHT;
+  int max_width = WIDTH;
+  int height_chunk = HEIGHT/num_threads;
+  int img_chunk_size = height_chunk * max_width * 4;
 
+  int height_lo_index = 0;
+  int height_hi_index = height_chunk;
 
+  //render chunks pass
+  for(int i=0; i<num_threads; i++){
+    //malloc the image space
+    img_chunk[i] = (float*)malloc(sizeof(float) * img_chunk_size);
 
+    //spin off thread
+    t[i] = thread(renderThreaded, s_scene_ptr, &kdtree, img_chunk[i], height_lo_index, height_hi_index);
+    // t[i] = thread(render, s_scene_ptr, &kdtree, img_chunk[i]);
 
-  /////////////////////////////////
+    //increment height indices
+    height_lo_index += height_chunk;
+    height_hi_index += height_chunk;
+  }
+  for(int i=0; i<num_threads; i++){
+    t[i].join();
+  }
 
+  //stitch the image
+  float *img = (float*)malloc(sizeof(float) * max_height * max_width * 4);
+  height_lo_index = 0;
+  for(int i=0; i<num_threads; i++){
+    stitch(img, img_chunk[i], max_width, height_lo_index, img_chunk_size);
+    height_lo_index += height_chunk;
+  }
 
-
-
-
+  //tone map
   tone_map(img, HEIGHT * WIDTH * 4);
-
   printf("Rendered! \n");
+
+ 
 
   //////////////////CAIRO///////////////////////
   Pixel* imgData = (Pixel *) malloc(sizeof(Pixel) * WIDTH * HEIGHT);
@@ -796,12 +1038,19 @@ int main (int argc, char const *argv[]){
   /////////////////////////////////////////
 
   free(img);
-  //Scene is destructed automatically ~SCEscene()
+  for(int i=0; i<num_threads; i++){
+    free(img_chunk[i]);
+  }
+  // Scene is destructed automatically ~SCEscene()
+  //destruct the kd_tree??
 
   //end timing
-  diff = clock() - start;
-  int msec = diff * 1000 / CLOCKS_PER_SEC;
-  printf("Time taken %d seconds %d milliseconds\n", msec/1000, msec%1000);
+  current_utc_time(&end);
+  double elapsed;
+  elapsed = (end.tv_sec - start.tv_sec);
+  elapsed += (end.tv_nsec - start.tv_nsec)/1000000000.0;
+  printf("Time elapsed %f seconds\n", elapsed);
+
 
   return 0;
 }

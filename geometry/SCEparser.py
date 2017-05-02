@@ -69,6 +69,16 @@ class Scene(object):
     	self.n_spheres = 0
     	self.triangles = list()
     	self.n_triangles = 0
+    	self.films = list()
+    	self.n_films = 0
+    	self.boundboxes = list()
+    	self.n_boundboxes = 0
+
+    #add a film
+    def add_film(self, width, height):
+    	film = {'width': width, 'height': height}
+    	self.films.append(film)
+    	self.n_films += 1	
 
     #add a camera
     def add_camera(self, point, toPoint, fieldOfView, up, lensRadius, focalDepth):
@@ -100,6 +110,12 @@ class Scene(object):
     	self.triangles.append(triangle)
     	self.n_triangles += 1
 
+    #add bounding box
+    def add_boundbox(self, min, max):
+    	box = {'min': min, 'max': max}
+    	self.boundboxes.append(box)
+    	self.n_boundboxes += 1
+
     #sanity check functions###############################
     #call print)list by more specific functions below
     def print_list(self, self_list):
@@ -107,6 +123,14 @@ class Scene(object):
     		for key in item:
     			print key, ":", item[key]
     		print "------"
+
+    def print_boundboxes(self):
+		print "Bounding Boxes================"
+		Scene.print_list(self, self.boundboxes)
+
+    def print_films(self):
+    	print "Films========================"
+    	Scene.print_list(self, self.films)
 
     def print_cameras(self):
     	print "Cameras======================"
@@ -126,7 +150,7 @@ class Scene(object):
 
     def print_triangles(self):
 	    print "Triangles===================="
-	    Scene.print_list(self, self.triangles)    	
+	    Scene.print_list(self, self.triangles)   
 
 
 #################################
@@ -135,30 +159,36 @@ class Scene(object):
 
 #Write a binary stream of 32-bits at a time (ints or floats)
 # The format of the binary file is:
+# -send film
 # -send camera
 # -send light(s)
 # -send material(s)
 # -send sphere(s)
 # -send triangle(s)
+# -send bounding box
 # -send END code
 
 # -each is a command followed by args
 # ie. CAM_CMD CAM_ARG_1 CAM_ARG_2 CAM_ARG_3 CAM_ARG_4 CAM_ARG_5 CAM_ARG_6
 
 #Command codes:
-#0	Camera
-#1	Light
-#2	Material
-#3	Sphere
-#4 	Triangle
-#5 	END
+#0 	Film
+#1	Camera
+#2	Light
+#3	Material
+#4	Sphere
+#5 	Triangle
+#6 	Bounding Box
+#7	END
 
 #Parser in cpp needs: (F for FLOAT_32, I for INT_32)
-#CMD_CAM F_Px F_Py F_Pz F_Tx F_Ty F_Tz F_FOV F_Ux F_Uy F_Uz
+#CMD_FLM I_width I_height
+#CMD_CAM F_Px F_Py F_Pz F_Tx F_Ty F_Tz F_FOV F_Ux F_Uy F_Uz F_R F_focalDepth
 #CMD_LGT I_Type F_Px F_Py F_Pz F_Cx F_Cy F_Cz
 #CMD_MAT F_Cx F_Cy F_Cz I_Type I_Metal F_Spec F_Lam F_Amb F_exp
 #CMD_SPH F_Px F_Py F_Pz F_R	I_matIndex
 #CMD_TRI F_P1x F_P1y F_P1z F_P2x F_P2y F_P2z F_P3x F_P3y F_P3z I_matIndex
+#CMD_BOX F_Min_x F_Min_y F_Min_z F_Max_x F_Max_y F_Max_z
 
 #lightType
 #0	OMNI
@@ -170,18 +200,36 @@ class Scene(object):
 
 def writeB(scene, b_name): 
 	#Sanitization checks
+	#if no image size, error
+	if scene.n_films == 0:
+		print "Error: Scene needs a film."
+		return
+
 	#if no camera, error:
 	if scene.n_cameras == 0:
 		print "Error: Scene needs a camera."
 		return
 
+	#if no bounding box, error
+	if scene.n_boundboxes == 0:
+		print "Error: Scene needs a bounding box."
+		return
+
 	#Create bitstring
 	s = BitArray()
+
+	#Film
+	film = scene.films[0]
+	t = BitArray()
+	t = bitstring.pack("3*int:32", 0,
+		film['width'], film['height'])
+	print t.unpack("3*int:32")
+	s = s + t
 
 	#Camera
 	camera = scene.cameras[0]
 	t = BitArray()
-	t = bitstring.pack("int:32, 12*float:32", 0,
+	t = bitstring.pack("int:32, 12*float:32", 1,
 		camera['point'][0], camera['point'][1], camera['point'][2], 
 		camera['fieldOfView'],
 		camera['toPoint'][0], camera['toPoint'][1], camera['toPoint'][2], 
@@ -195,7 +243,7 @@ def writeB(scene, b_name):
 	for i in range(scene.n_lights):
 		light = scene.lights[i]
 		t = BitArray()
-		t = bitstring.pack("2*int:32, 6*float:32", 1,
+		t = bitstring.pack("2*int:32, 6*float:32", 2,
 			light['type'], 
 			light['point'][0], light['point'][1], light['point'][2], 
 			light['color'][0], light['color'][1], light['color'][2])
@@ -206,7 +254,7 @@ def writeB(scene, b_name):
 	for i in range(scene.n_materials):
 		mat = scene.materials[i]
 		t = BitArray()
-		t = bitstring.pack("int:32, 3*float:32, 2*int:32, 4*float:32", 2,
+		t = bitstring.pack("int:32, 3*float:32, 2*int:32, 4*float:32", 3,
 			mat['color'][0], mat['color'][1], mat['color'][2], 
 			mat['type'], mat['metal'], 
 			mat['specular'], mat['lambert'], mat['ambient'], mat['exponent'])
@@ -217,7 +265,7 @@ def writeB(scene, b_name):
 	for i in range(scene.n_spheres):
 		sphere = scene.spheres[i]
 		t = BitArray()
-		t = bitstring.pack("int:32, 4*float:32, int:32", 3,
+		t = bitstring.pack("int:32, 4*float:32, int:32", 4,
 			sphere['point'][0], sphere['point'][1], sphere['point'][2], sphere['radius'],
 			sphere['materialIndex'])
 		print t.unpack("int:32, 4*float:32, int:32")
@@ -227,7 +275,7 @@ def writeB(scene, b_name):
 	for i in range(scene.n_triangles):
 		tri = scene.triangles[i]
 		t = BitArray()
-		t = bitstring.pack("int:32, 9*float:32, int:32", 4,
+		t = bitstring.pack("int:32, 9*float:32, int:32", 5,
 			tri['point1'][0], tri['point1'][1], tri['point1'][2],
 			tri['point2'][0], tri['point2'][1], tri['point2'][2],
 			tri['point3'][0], tri['point3'][1], tri['point3'][2],
@@ -235,9 +283,18 @@ def writeB(scene, b_name):
 		print t.unpack("int:32, 9*float:32, int:32")
 		s = s + t
 
+	#Bounding Box
+	box = scene.boundboxes[0]
+	t = BitArray()
+	t = bitstring.pack("int:32, 6*float:32", 6,
+		box['min'][0], box['min'][1], box['min'][2],
+		box['max'][0], box['max'][1], box['max'][2])
+	print t.unpack("int:32, 6*float:32")
+	s = s + t
+
 	#Send end code
 	t = BitArray()
-	t = bitstring.pack("int:32", 5)
+	t = bitstring.pack("int:32", 7)
 	s = s + t
 
 	#Write to file
@@ -312,6 +369,18 @@ class Parser(object):
 
 	def __init__(self):
 		pass
+
+	def film(self, scene, attributes):
+		film_args = dict()
+		for attribute in attributes:
+			(function, args_list) = getAttr(attribute)
+			if function == "Width":
+				film_args["Width"] = args_list[0]
+			elif function == "Height":
+				film_args["Height"] = args_list[0]
+			else:
+				print "Invalid Film attribute: " + function
+		scene.add_film(film_args["Width"], film_args["Height"])
 
 	def camera(self, scene, attributes):
 		camera_args = dict()
@@ -571,6 +640,17 @@ class Parser(object):
 					print "Unsupported Include Directive: " + keyword
 			handle.close
 
+	def boundbox(self, scene, attributes):
+		box_args = dict()
+		for attribute in attributes:
+			(function, args_list) = getAttr(attribute)
+			if function == "Min":
+				box_args["Min"] = (args_list[0], args_list[1], args_list[2])
+			elif function == "Max":
+				box_args["Max"] = (args_list[0], args_list[1], args_list[2])
+			else:
+				print "Invalid BoundingBox attribute: " + function
+		scene.add_boundbox(box_args["Min"], box_args["Max"])
 
 #open SCE, iterate through each line and call correct primitive construction
 #use regular expression to get dict fields
@@ -587,7 +667,10 @@ def parseSCE(input_file):
 		tokens = line.split(' ', 1)
 		keyword = tokens[0]
 		attributes = getAttrList(tokens[1:])
-		if keyword == "CAMERA":
+		if keyword == "FILM":
+			# print "FILM PARSER"
+			Parse.film(scene, attributes)
+		elif keyword == "CAMERA":
 			# print "CAMERA PARSER"
 			Parse.camera(scene, attributes)
 		elif keyword == "LIGHT":
@@ -605,6 +688,9 @@ def parseSCE(input_file):
 		elif keyword == "INCLUDE":
 			# print "INCLUDE PARSER"
 			Parse.include(scene, attributes)
+		elif keyword == "BOUNDINGBOX":
+			# print "BOUNDINGBOX PARSER"
+			Parse.boundbox(scene, attributes)
 		elif keyword == "\n":
 			pass
 		elif keyword[0] == "#":

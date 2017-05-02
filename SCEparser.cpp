@@ -252,6 +252,15 @@ SCEscene::SCEscene():
 	n_spheres(0), n_triangles(0), cameras(), lights(), 
 	materials(), spheres(), triangles(), objects() {}
 
+void SCEscene::add_film(int width, int height){
+	Film* film;
+	film = (Film *) malloc(sizeof(struct Film));
+	film->width = width;
+	film->height = height;
+
+	this->films.push_back(*film);
+}
+
 void SCEscene::add_camera(vec3 point, vec3 toPoint, float fieldOfView, vec3 up, float lensRadius, float focalDepth){
 	Camera* camera; 
 	camera = (Camera *) malloc(sizeof(struct Camera));
@@ -369,6 +378,15 @@ void SCEscene::add_triangle(vec3 point1, vec3 point2, vec3 point3, int matIndex)
 	this->objects.push_back(*obj);
 }
 
+void SCEscene::add_boundbox(vec3 min, vec3 max){
+	BoundBox* box;
+	box = (BoundBox *) malloc(sizeof(struct BoundBox));
+	box->min = min;
+	box->max = max;
+
+	this->boxes.push_back(*box);
+}
+
 
 void SCEscene::free_triangles(){
 	int i, n;
@@ -390,6 +408,7 @@ void SCEscene::free_objects(){
 }
 
 void SCEscene::build_scene(){
+	this->s_scene.film = &(this->films[0]);
 	this->s_scene.camera = &(this->cameras[0]);
 	this->s_scene.materials = this->materials;
 	this->s_scene.objects = this->objects;
@@ -397,6 +416,7 @@ void SCEscene::build_scene(){
 	this->s_scene.n_lights = this->lights.size();
 	this->s_scene.n_materials = this->materials.size();
 	this->s_scene.n_objects = this->objects.size();
+	this->s_scene.box = &(this->boxes[0]);
 }
 
 Scene* SCEscene::get_scene(){
@@ -409,6 +429,9 @@ vector<struct Object>* SCEscene::get_objects(){
 
 void SCEscene::print_scene(){
 	Scene s_scene = this->s_scene;
+	//Film
+	Film film = *s_scene.film;
+	printf("Film width=%d, height=%d\n", film.width, film.height);
 	//Camera
 	Camera camera = *s_scene.camera;
 	printf("Camera point=(%f, %f, %f), fieldOfView=%f, toPoint=(%f, %f, %f), up=(%f, %f, %f), lensRadius=%f, focalDepth=%f\n", 
@@ -453,6 +476,11 @@ void SCEscene::print_scene(){
 			printf("Invalid!!!\n");
 		}
 	}
+	//Bounding box
+	BoundBox box = *s_scene.box;
+	printf("Bounding Box min(%f, %f, %f), max(%f, %f, %f)\n",
+		box.min.x, box.min.y, box.min.z,
+		box.max.x, box.max.y, box.max.z);
 }
 
 
@@ -471,12 +499,14 @@ Parse::Parse(){
 }
 
 // #Command codes:
-// #0	Camera
-// #1	Light
-// #2	Material
-// #3	Sphere
-// #4 	Triangle
-// #5 	END
+// #0	Film
+// #1	Camera
+// #2	Light
+// #3	Material
+// #4	Sphere
+// #5 	Triangle
+// #6   Bounding Box
+// #7 	END
 
 float IEEEInttoFloat(int value) {
 	union
@@ -495,6 +525,23 @@ int swapEndian(int value){
             ((value<<8)&0xff0000) | // move byte 1 to byte 2
             ((value>>8)&0xff00) | // move byte 2 to byte 1
             ((value<<24)&0xff000000); // byte 0 to byte 3
+}
+
+//read film arguments using fread, construct film
+void Parse::film(FILE *f, SCEscene *scene){
+	int i, value, retval, swapped;
+	int ints[2];
+	for(i=0;i<2;i++){
+		if((retval = fread(&value, 4, 1, f)) > 0){
+			swapped = swapEndian(value);
+			ints[i] = swapped;
+		}
+	}
+	//Construct vecs and args
+	int width = ints[0];
+	int height = ints[1];
+	//Add film to scene
+	(*scene).add_film(width, height);
 }
 
 //read the camera arguments using fread, construct camera
@@ -636,6 +683,23 @@ void Parse::triangle(FILE *f, SCEscene *scene){
 
 }
 
+//read bounding box arguments using fread, construct bounding box
+void Parse::boundbox(FILE *f, SCEscene *scene){
+	int i, value, retval, swapped;
+	float a[6];
+	for(i=0;i<6;i++){
+		if((retval = fread(&value, 4, 1, f)) > 0){
+			swapped = swapEndian(value);
+			a[i] = IEEEInttoFloat(swapped);
+		}
+	}
+	//Construct vecs and args
+	vec3 min={.x=a[0], .y=a[1], .z=a[2]};
+	vec3 max={.x=a[3], .y=a[4], .z=a[5]};
+	//Add film to scene
+	(*scene).add_boundbox(min, max);
+}
+
 int Parse::parseSCE(char * infile, SCEscene *scene){
 	FILE *f = fopen(infile, "rb");
 	if(f == NULL){
@@ -651,21 +715,26 @@ int Parse::parseSCE(char * infile, SCEscene *scene){
 		int swapped = swapEndian(cmd);
 		switch (swapped){
 			case 0:
-				Parse::camera(f, scene);
+				Parse::film(f, scene);
 				break;
 			case 1:
-				Parse::light(f, scene);
+				Parse::camera(f, scene);
 				break;
 			case 2:
-				Parse::material(f, scene);
+				Parse::light(f, scene);
 				break;
 			case 3:
-				Parse::sphere(f, scene);
+				Parse::material(f, scene);
 				break;
 			case 4:
-				Parse::triangle(f, scene);
+				Parse::sphere(f, scene);
 				break;
 			case 5:
+				Parse::triangle(f, scene);
+				break;
+			case 6:
+				Parse::boundbox(f, scene);
+			case 7:
 				break;
 			default:
 				printf("Invalid cmd\n");

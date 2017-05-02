@@ -18,10 +18,17 @@
 
 using std::vector;
 
-
-#define HEIGHT 512
-#define WIDTH 512
 #define PI 3.14159f
+
+typedef struct Film{
+  int height;
+  int width;
+} Film;
+
+typedef struct BoundBox{
+  vec3 min;
+  vec3 max;
+} BoundBox;
 
 typedef struct Camera{
   vec3 point;
@@ -81,6 +88,8 @@ typedef struct Ray{
 //Fill in SceneStruct later
 typedef struct Scene{
   Camera* camera;
+  Film* film;
+  BoundBox* box;
   vector<Material> materials;
   vector<Object> objects;
   vector<Light> lights;

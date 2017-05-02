@@ -77,13 +77,21 @@ It also handles light primitives, material primitives, and object array primitiv
 
 .sce file specification:
 Initialize primitives such as:
-CAMERA, LIGHT, MATERIAL, SPHERE, TRIANGLE, INCLUDE
+FILM, CAMERA, LIGHT, MATERIAL, SPHERE, TRIANGLE, INCLUDE, BOUNDINGBOX
 Important: Material Indices begin at 0!  User must keep this in mind when specifying TRIANGLE or SPHERE primitives
 Important: Any scene file must contain a camera
 Important: INCLUDE cannot contain nested INCLUDEs
 -INCLUDE only supports geometry (SPHERE, TRIANGLE)
+-FILM attributes: Width(i) Height(i)
+-CAMERA attributes: Point(f, f, f) LookAt(f, f, f) FOV(f) Up(f, f, f) LensRadius(f) FocalDepth(f)
+-LIGHT attributes: Type(OMNI) Point(f, f, f) Color(f, f, f)
+-MATERIAL attributes: Color(f, f, f) Type(ORIGINAL | PHONG) Metal(bool) Specular(f) Lambert(f) Ambient(f) Exponent(f)
+-SPHERE attributes: Point(f, f, f) Radius(f) Matieral(i)
+-TRIANGLE attributes: P1(f, f, f) P2(f, f, f) P3(f, f, f) Material(i)
 -Transformations supported for SPHERE: Translate(x, y, z), ScaleR(s), RotateX(a), RotateY(a), RotateZ(a)
 -Transformations supported for TRIANGLE: Translate(x, y, z), Scale(x, y, z), RotateX(a), RotateY(a), RotateZ(a)
+-INCLUDE attributes: Mesh(file location) + transformations for TRIANGLE or SPHERE
+-BOUNDINGBOX attributes: Min(f, f, f) Max(f, f, f)
 
 
 SCENE GENERATION SAMPLE WORKFLOW:
@@ -94,6 +102,7 @@ python geometry/SCEparser.py scene1.sce scene1.bin
 ---------------------------------------------------------------------
 /*********************** Acceleration ******************************/
 ---------------------------------------------------------------------
+-acceleration is based off some work done from Fall 2015
 
 A kd-tree acceleration structure is implemented.  The KDnode and KDtree classes can be found in SCEparser.h and SCEparser.cpp.
 
@@ -114,7 +123,39 @@ Interestingly, splitting by getting the average middle point did not perform wel
 
 According to some research online, the best way to build the kd-tree is by using the SAH heuristic.
 
+---------------------------------------------------------------------
+/***************** Unidirectional Path Tracing **********************/
+---------------------------------------------------------------------
+-see last semesters work for this (Fall 2016)
 
 
+---------------------------------------------------------------------
+/*********************** Depth of Field ****************************/
+---------------------------------------------------------------------
+-circular approximation
+-if LensRadius is set to 0.0, point camera is used
+
+---------------------------------------------------------------------
+/*********************** Multithreading ****************************/
+---------------------------------------------------------------------
+-need to change main.cpp global var and recompile if number of threads is changed
+-default number to use is 8 threads, based off number of cores on my Mac
+-will allow threading for any factor of the image height
+
+---------------------------------------------------------------------
+/********************** Noise reduction ****************************/
+---------------------------------------------------------------------
+-lo vs hi samples per pixel
+-pixel diff tolerance (variance or manhattan norm)
+-gaussian filter
+
+
+---------------------------------------------------------------------
+/************************** Materials ******************************/
+---------------------------------------------------------------------
+
+---------------------------------------------------------------------
+/************************** Lights *********************************/
+---------------------------------------------------------------------
 
 

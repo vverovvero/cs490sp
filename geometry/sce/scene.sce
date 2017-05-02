@@ -1,4 +1,6 @@
-CAMERA Point(50, 50, 200) LookAt(50, 25, 0) FOV(60) Up(UP) LensRadius(1) FocalDepth(50)
+FILM Width(512) Height(512)
+
+CAMERA Point(50, 50, 200) LookAt(50, 25, 0) FOV(60) Up(UP) LensRadius(0) FocalDepth(50)
 
 LIGHT Type(OMNI) Point(50, 95, 50) Color(155, 155, 155)
 LIGHT Type(OMNI) Point(5, 95, 100) Color(255, 220, 200)
@@ -31,6 +33,7 @@ TRIANGLE P1(100, 0, 0) P2(100, 0, 100) P3(100, 100, 100) Material(3)
 TRIANGLE P1(100, 100, 100) P2(100, 100, 0) P3(100, 0, 0) Material(3)
 
 
-
 INCLUDE Mesh(sce/humanoid.sce) Material(2) Scale(3,3,3) RotateY(20) Translate(50, 10, 50) 
 #INCLUDE Mesh(sce/bunny.sce) Material(2) 
+
+BOUNDINGBOX Min(-500, -500, -500) Max(500, 500, 500)

@@ -28,6 +28,8 @@ typedef struct Camera{
   float fieldOfView;
   vec3 toPoint;
   vec3 up;
+  float lensRadius;
+  float focalDepth;
 } Camera;
 
 typedef enum {OMNI, SPOT} lightType;

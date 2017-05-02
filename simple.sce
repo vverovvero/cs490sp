@@ -1,4 +1,4 @@
-CAMERA Point(50, 50, 200) LookAt(50, 25, 0) FOV(60) Up(UP)
+CAMERA Point(50, 50, 200) LookAt(50, 25, 0) FOV(60) Up(UP) LensRadius(3.0) FocalDepth(50)
 
 LIGHT Type(OMNI) Point(50, 95, 50) Color(155, 155, 155)
 LIGHT Type(OMNI) Point(5, 95, 100) Color(255, 220, 200)

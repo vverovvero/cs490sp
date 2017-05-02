@@ -71,8 +71,8 @@ class Scene(object):
     	self.n_triangles = 0
 
     #add a camera
-    def add_camera(self, point, toPoint, fieldOfView, up):
-    	camera = {'point': point, 'toPoint': toPoint, 'fieldOfView': fieldOfView, 'up': up}
+    def add_camera(self, point, toPoint, fieldOfView, up, lensRadius, focalDepth):
+    	camera = {'point': point, 'toPoint': toPoint, 'fieldOfView': fieldOfView, 'up': up, 'lensRadius': lensRadius, 'focalDepth': focalDepth}
     	self.cameras.append(camera)
     	self.n_cameras += 1
 
@@ -143,7 +143,7 @@ class Scene(object):
 # -send END code
 
 # -each is a command followed by args
-# ie. CAM_CMD CAM_ARG_1 CAM_ARG_2 CAM_ARG_3 CAM_ARG_4
+# ie. CAM_CMD CAM_ARG_1 CAM_ARG_2 CAM_ARG_3 CAM_ARG_4 CAM_ARG_5 CAM_ARG_6
 
 #Command codes:
 #0	Camera
@@ -181,12 +181,14 @@ def writeB(scene, b_name):
 	#Camera
 	camera = scene.cameras[0]
 	t = BitArray()
-	t = bitstring.pack("int:32, 10*float:32", 0,
+	t = bitstring.pack("int:32, 12*float:32", 0,
 		camera['point'][0], camera['point'][1], camera['point'][2], 
 		camera['fieldOfView'],
 		camera['toPoint'][0], camera['toPoint'][1], camera['toPoint'][2], 
-		camera['up'][0], camera['up'][1], camera['up'][2])
-	print t.unpack("int:32, 10*float:32")
+		camera['up'][0], camera['up'][1], camera['up'][2],
+		camera['lensRadius'],
+		camera['focalDepth'])
+	print t.unpack("int:32, 12*float:32")
 	s = s + t
 
 	#Lights
@@ -312,8 +314,10 @@ class Parser(object):
 		pass
 
 	def camera(self, scene, attributes):
-		# print attributes
 		camera_args = dict()
+		# set defaults for lensRadius and focalDepth
+		camera_args["LensRadius"] = 0.0
+		camera_args["FocalDepth"] = 0.0
 		for attribute in attributes:
 			#Get [function, args_list]for each attribute
 			(function, args_list) = getAttr(attribute)
@@ -334,10 +338,14 @@ class Parser(object):
 						"Cannot interpret vector macro for camera Up attribute."
 				else:
 					print "Cannot interpret argument for camera Up attribute."
+			elif function == "LensRadius":
+				camera_args["LensRadius"] = args_list[0]
+			elif function == "FocalDepth":
+				camera_args["FocalDepth"] = args_list[0]
 			else:
 				print "Invalid Camera attribute: " + function
 		# print camera_args
-		scene.add_camera(camera_args["Point"], camera_args["LookAt"], camera_args["FOV"], camera_args["Up"])
+		scene.add_camera(camera_args["Point"], camera_args["LookAt"], camera_args["FOV"], camera_args["Up"], camera_args["LensRadius"], camera_args["FocalDepth"])
 
 	def light(self, scene, attributes):
 		light_args = dict()

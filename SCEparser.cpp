@@ -252,13 +252,15 @@ SCEscene::SCEscene():
 	n_spheres(0), n_triangles(0), cameras(), lights(), 
 	materials(), spheres(), triangles(), objects() {}
 
-void SCEscene::add_camera(vec3 point, vec3 toPoint, float fieldOfView, vec3 up){
+void SCEscene::add_camera(vec3 point, vec3 toPoint, float fieldOfView, vec3 up, float lensRadius, float focalDepth){
 	Camera* camera; 
 	camera = (Camera *) malloc(sizeof(struct Camera));
 	camera->point = point;
 	camera->toPoint = toPoint;
 	camera->fieldOfView = fieldOfView;
 	camera->up = up;
+	camera->lensRadius = lensRadius;
+	camera->focalDepth = focalDepth;
 
 	this->cameras.push_back(*camera);
 }
@@ -409,11 +411,13 @@ void SCEscene::print_scene(){
 	Scene s_scene = this->s_scene;
 	//Camera
 	Camera camera = *s_scene.camera;
-	printf("Camera point=(%f, %f, %f), fieldOfView=%f, toPoint=(%f, %f, %f), up=(%f, %f, %f)\n", 
+	printf("Camera point=(%f, %f, %f), fieldOfView=%f, toPoint=(%f, %f, %f), up=(%f, %f, %f), lensRadius=%f, focalDepth=%f\n", 
 		camera.point.x, camera.point.y, camera.point.z, 
 		camera.fieldOfView, 
 		camera.toPoint.x, camera.toPoint.y, camera.toPoint.z, 
-		camera.up.x, camera.up.y, camera.up.z);
+		camera.up.x, camera.up.y, camera.up.z,
+		camera.lensRadius,
+		camera.focalDepth);
 	//Lights
 	for(int i=0; i<this->s_scene.n_lights; i++){
 		Light light = this->s_scene.lights[i];
@@ -497,8 +501,8 @@ int swapEndian(int value){
 void Parse::camera(FILE *f, SCEscene *scene){
 	//Get camera inputs from binary file
 	int i, value, retval, swapped;
-	float a[10];
-	for(i=0;i<10;i++){
+	float a[12];
+	for(i=0;i<12;i++){
 		if((retval = fread(&value, 4, 1, f)) > 0){
 			swapped = swapEndian(value);
 			a[i] = IEEEInttoFloat(swapped);
@@ -509,9 +513,11 @@ void Parse::camera(FILE *f, SCEscene *scene){
 	float fov = a[3];
 	vec3 toPoint = {.x=a[4], .y=a[5], .z=a[6]};
 	vec3 up = {.x=a[7], .y=a[8], .z=a[9]};
+	float lensRadius = a[10];
+	float focalDepth = a[11];
 
 	//Add camera to scene
-	(*scene).add_camera(point, toPoint, fov, up);
+	(*scene).add_camera(point, toPoint, fov, up, lensRadius, focalDepth);
 }
 
 //read light arguments using fread, add light to scene

@@ -237,7 +237,7 @@ Other:
 //////
 5/1: Code cleanup to do
 USER INPUTS
----factor out DOF information; put into camera struct and user input scene (lensRadius and focalDepth)
++++factor out DOF information; put into camera struct and user input scene (lensRadius and focalDepth)
 ---add materials like glass
 ---add soft shadows for lighting
 

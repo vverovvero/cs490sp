@@ -1,6 +1,6 @@
 IDIR 	= /usr/local/include/cairo/
-CC      = g++
-CFLAGS  = -std=c++11 -pthread
+CC      = clang++
+CFLAGS  = -std=c++11 -stdlib=libc++
 RM      = rm -f
 
 LIBS = -L/usr/local/lib

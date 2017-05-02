@@ -723,9 +723,9 @@ void renderThreaded(Scene* scene, KDtree* tree, float* img, int lo_index, int hi
 
             //PBRT CAMERA DEPTH OF FIELD
             //lensRadius and focalDepth assumptions:
-            float lensRadius = 3.0;
-            float focalDepth = 80.0;
-            if(lensRadius > 0.0){
+            // float lensRadius = 3.0;
+            // float focalDepth = 80.0;
+            if(camera->lensRadius > 0.0){
               //generate random sample, 
               float disk_u1 = drand48();
               float disk_u2 = drand48();
@@ -735,8 +735,8 @@ void renderThreaded(Scene* scene, KDtree* tree, float* img, int lo_index, int hi
               float lensU = uniform_r*cos(uniform_theta);
               float lensV = uniform_r*sin(uniform_theta);
               //scale by lens radius
-              lensU *= lensRadius;
-              lensV *= lensRadius;
+              lensU *= camera->lensRadius;
+              lensV *= camera->lensRadius;
               //get disk sample
               vec3 uniform_diskSample = {
                 .x = lensU,
@@ -750,7 +750,7 @@ void renderThreaded(Scene* scene, KDtree* tree, float* img, int lo_index, int hi
               vec3 ycomp = scale(vpUp, ((y) * pixelHeight) - halfHeight);
               ray.vector = unitVector(add3(eyeVector, xcomp, ycomp));
               //Compute point on plane of focus
-              float ft = fabs(focalDepth - camera->point.z)/ray.vector.z;
+              float ft = fabs(camera->focalDepth - camera->point.z)/ray.vector.z;
               vec3 Pfocus = subtract(camera->point, scale(ray.vector, ft));
               // printf("Point of focus (%f, %f, %f)\n", Pfocus.x, Pfocus.y, Pfocus.z);
               //Update ray

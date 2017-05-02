@@ -236,7 +236,17 @@ KDnode* KDnode::getRight(){
 
 
 //think about destruction
-KDnode::~KDnode(){};
+KDnode::~KDnode(){
+	//call on children
+	if(this->left != NULL){
+		this->left->~KDnode();
+	}
+	if(this->right != NULL){
+		this->right->~KDnode();
+
+	}
+	//will this auto destruct the node?
+};
 
 
 /////////////////////
@@ -258,7 +268,8 @@ KDtree::KDtree(vec3 min, vec3 max, SCEscene* scene){
 KDnode* KDtree::get_kdtree(){
 	return this->root;
 };
-//think about destruction
+
+//destruction of tree happens from KDnode destructor
 KDtree::~KDtree(){};
 
 

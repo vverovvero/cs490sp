@@ -26,7 +26,9 @@
 //http://stackoverflow.com/questions/2962785/c-using-clock-to-measure-time-in-multi-threaded-programs
 //http://stackoverflow.com/questions/5167269/clock-gettime-alternative-in-mac-os-x
 //https://gist.github.com/jbenet/1087739
-
+//Determining if a ray has intersected an object in the scene.
+//http://www.scratchapixel.com/lessons/3d-basic-rendering/minimal-ray-tracer-rendering-simple-shapes/ray-box-intersection
+//https://blog.frogslayer.com/kd-trees-for-faster-ray-tracing-with-triangles/
 /***************************** Headers and Structs *******************************/
 
 #include "main.h"
@@ -83,11 +85,14 @@ float sphereIntersection(Sphere* sphere, Ray* ray);
 vec3 sphereNormal(Sphere* sphere, vec3 pos);
 vec3 triNormal(Triangle* tri);
 float triIntersection(Triangle* tri, Ray* ray);
-void renderThreaded(Scene* scene, KDtree* tree, float* img, int lo_index, int hi_index, bool low_sample_flag);
-vec3 trace(Ray* ray, Scene* scene, KDtree* tree, vec3 *pointAtTime, float *contribution);
+Dist intersectObjectList(Ray* ray, vector<struct Object*>* shortList);
+float intersectBox(Ray* ray, KDnode* node);
+void intersectKD(Ray *ray, KDnode* node, vector<struct Object*>* shortList);
 Dist intersectSceneAccel(Ray *ray, KDnode* node);
 int isLightVisible(vec3 point, Scene* scene, KDtree* tree, vec3 light);
 vec3 surface(Ray* ray, Scene* scene, KDtree* tree, Object* object, vec3 pointAtTime, vec3 normal, float *contribution);
+vec3 trace(Ray* ray, Scene* scene, KDtree* tree, vec3 *pointAtTime, float *contribution);
+void renderThreaded(Scene* scene, KDtree* tree, float* img, int lo_index, int hi_index, bool low_sample_flag);
 void stitch(float *img, float *chunk, int width, int lo_index, int chunk_size);
 
 
@@ -105,24 +110,20 @@ vec3 triNormal(Triangle* tri) {
 }
 
 vec3 objectNormal(Object* object, vec3 point){
-
   if (object->type == SPHERE){
     return sphereNormal((Sphere*)object->object, point);
   }
-
-  if (object->type == TRIANGLE) {
+  else if (object->type == TRIANGLE) {
     return (triNormal((Triangle*)object->object));
   }
-
-  printf("objectNormal broke\n");
-  return ZERO;
-
+  else{
+    fprintf(stderr, "objectNormal broke\n");
+    return ZERO;
+  }
 }
 
 float sphereIntersection(Sphere* sphere, Ray* ray){
-
   vec3 eye_to_center = subtract(sphere->point, ray->point);
-
   float v = dotProduct(eye_to_center, ray->vector);
   float eoDot = dotProduct(eye_to_center, eye_to_center);
   float discriminant = (sphere->radius * sphere->radius) - eoDot + (v * v);
@@ -130,13 +131,11 @@ float sphereIntersection(Sphere* sphere, Ray* ray){
   if ((fabsf(length(eye_to_center)-sphere->radius) / sphere->radius) < .001f) {
     return -1.0f;
   }
-
-  // If the discriminant is negative, that means that the sphere hasn't
-  // been hit by the ray
+  // Negative discriminant means no hit
   if (discriminant < 0.0f) {
       return -1.0f;
   } else {
-      // otherwise, we return the distance from the camera point to the sphere
+      // otherwise, return distance from camera point to sphere
       // `Math.sqrt(dotProduct(a, a))` is the length of a vector, so
       // `v - Math.sqrt(discriminant)` means the length of the the vector
       // just from the camera to the intersection point.
@@ -145,7 +144,6 @@ float sphereIntersection(Sphere* sphere, Ray* ray){
 }
 
 float triIntersection(Triangle* tri, Ray* ray) {
-
     // compute triangle normal and d in plane equation
     vec3 triNorm = triNormal(tri);
     float d = -1.0f * dotProduct(tri->point1, triNorm);
@@ -186,27 +184,9 @@ float triIntersection(Triangle* tri, Ray* ray) {
     return dist;
 }
 
-///////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////
-// Scene Intersection functions, to be called from main
-///////////////////////////////////////////////////////////////////////////
-//This file contains functions for determining if a ray has intersected an object in the scene.
-//sources: http://www.scratchapixel.com/lessons/3d-basic-rendering/minimal-ray-tracer-rendering-simple-shapes/ray-box-intersection
-//sources: https://blog.frogslayer.com/kd-trees-for-faster-ray-tracing-with-triangles/
-
-//My changes:
-//Modified, to account for the use of kdTree
-//Encapsulates original function, but gives the function a list of objects instead
-//Search for collsion with kd tree first
-
-
-//intersectObjectList
 //search for intersection between ray and object on shortened list
-//may need to adjust so that shortList is a vecotr of Object pointers
 Dist intersectObjectList(Ray* ray, vector<struct Object*>* shortList) {
-  // printf("intersectObjectList called!\n");
-  Dist closest = { .distance = FLT_MAX, .object = NULL};
-
+  Dist closest = { .distance = INFINITY, .object = NULL};
   // Find closest intersecting object
   int i;
   int size = (*shortList).size();
@@ -230,16 +210,14 @@ Dist intersectObjectList(Ray* ray, vector<struct Object*>* shortList) {
     }
   }
 
-  if (closest.distance == FLT_MAX) {
+  if (closest.distance == INFINITY) {
     closest.distance = -1.0f;
   }
-
   return closest;
 }
 //intersectBox, adapted from scratchapixel, the non-optimized code
 //return infinity or tmin
 float intersectBox(Ray* ray, KDnode* node){
-  // printf("intersectBox called!\n");
   //Get values from node
   vec3 nodeMin = (*node).getMin();
   vec3 nodeMax = (*node).getMax();
@@ -270,7 +248,7 @@ float intersectBox(Ray* ray, KDnode* node){
 
   //check for misses
   if((tmin > tymax) || (tymin > tmax)){
-    return FLT_MAX;
+    return INFINITY;
   }
 
   //pick a min and max
@@ -293,7 +271,7 @@ float intersectBox(Ray* ray, KDnode* node){
   }
 
   if((tmin > tzmax) || (tzmin > tmax)){
-    return FLT_MAX;
+    return INFINITY;
   }
 
   if(tzmin > tmin){
@@ -306,10 +284,9 @@ float intersectBox(Ray* ray, KDnode* node){
 
   return tmin;
 }
+
 //intersectKD, return a list of objects
-//fill the shortList
 void intersectKD(Ray *ray, KDnode* node, vector<struct Object*>* shortList){
-  // printf("intersectKD called!\n");
   stack<KDnode*> nodeStack;
   nodeStack.push(node);
 
@@ -323,7 +300,7 @@ void intersectKD(Ray *ray, KDnode* node, vector<struct Object*>* shortList){
     //check if current is a child
     //if it is child, check if there is an intersection, and add objects to shortList
     if(left == NULL && right == NULL){
-      if(intersectBox(ray, current) != FLT_MAX){
+      if(intersectBox(ray, current) != INFINITY){
         int i;
         vector<struct Object*>* objects = current->getObjects();
         int size = objects->size();
@@ -335,7 +312,7 @@ void intersectKD(Ray *ray, KDnode* node, vector<struct Object*>* shortList){
 
     //check if ray intersects current box
     //if it does, push the children onto the stack
-    if(intersectBox(ray, current) != FLT_MAX){
+    if(intersectBox(ray, current) != INFINITY){
       if(left != NULL){
         nodeStack.push(left);
       }
@@ -348,7 +325,6 @@ void intersectKD(Ray *ray, KDnode* node, vector<struct Object*>* shortList){
 
 //intersectScene
 Dist intersectSceneAccel(Ray *ray, KDnode* node){
-  // printf("intersectScene called!\n");
   vector<struct Object*> shortList;
   //fill the short list
   intersectKD(ray, node, &shortList);
@@ -356,18 +332,13 @@ Dist intersectSceneAccel(Ray *ray, KDnode* node){
   return intersectObjectList(ray, &shortList);
 }
 
-//////////////////////////////////////////
-
 int isLightVisible(vec3 point, Scene* scene, KDtree* tree, vec3 light) {
-
   vec3 full_vector = subtract(light,point);
   vec3 vector = unitVector(subtract(light, point));
   Ray ray = { .point = point, .vector = vector};
 
-  // Dist distObject =  intersectScene(&ray, scene);
   Dist distObject = intersectSceneAccel(&ray, (*tree).get_kdtree());
 
-  //Edit?  Is this comparing length of unit vector
   if (distObject.distance > 0.0f && distObject.distance < (length(full_vector) -.005)) {
     return 0; // False case where an object is found between the point and the light
   }
@@ -377,7 +348,6 @@ int isLightVisible(vec3 point, Scene* scene, KDtree* tree, vec3 light) {
 }
 
 vec3 surface(Ray* ray, Scene* scene, KDtree* tree, Object* object, vec3 pointAtTime, vec3 normal, float* contribution) {
-
   Material* material = &(scene->materials[object->matIndex]);
   vec3 objColor = material->color;
   vec3 c = ZERO;
@@ -399,7 +369,7 @@ vec3 surface(Ray* ray, Scene* scene, KDtree* tree, Object* object, vec3 pointAtT
       }
     }
   }
-    // for assn 6, adjust lit color by object color and divide by 255 since light color is 0 to 255
+  //adjust lit color by object color and divide by 255 since light color is 0 to 255
   lambertAmount = compScale(lambertAmount, objColor);
   lambertAmount = scale(lambertAmount, material->lambert);
   lambertAmount = scale(lambertAmount, 1./255.);
@@ -410,12 +380,9 @@ vec3 surface(Ray* ray, Scene* scene, KDtree* tree, Object* object, vec3 pointAtT
 //need to keep track of path_length and what bounce we are currently on
 //no!  don't want to recalculate.  store throughput
 vec3 trace(Ray* ray, Scene* scene, KDtree* tree, vec3 *pointAtTime, float* contribution) {
-
-  // Dist distObject = intersectScene(ray, scene);
   Dist distObject = intersectSceneAccel(ray, (*tree).get_kdtree());
 
   // If we don't hit anything, fill this pixel with the background color -
-  // in this case, white.
   if (distObject.distance < 0.0f) {
       return ZERO;
   }
@@ -428,7 +395,6 @@ vec3 trace(Ray* ray, Scene* scene, KDtree* tree, vec3 *pointAtTime, float* contr
   // the direction of the ray and making it as long as the distance
   // returned by the intersection check.
   *pointAtTime = add(ray->point, scale(ray->vector, dist));
-  // printf("trace intersected pointAtTime(%f, %f, %f)\n", (*pointAtTime).x, (*pointAtTime).y, (*pointAtTime).z);
 
   return surface(ray, scene, tree, object, *pointAtTime, objectNormal(object, *pointAtTime), contribution);
 }
@@ -456,8 +422,6 @@ void renderThreaded(Scene* scene, KDtree* tree, float* img, int lo_index, int hi
   float pixelHeight = cameraheight / (height - 1.0f);
 
   Ray ray;
-  // ray.point = camera->point;
-
   vec3 color;
 
   for (int x = 0; x < WIDTH; x++) {
@@ -465,9 +429,6 @@ void renderThreaded(Scene* scene, KDtree* tree, float* img, int lo_index, int hi
     //reset img_y counter
     int img_y = 0;
     for (int y = lo_index; y < hi_index; img_y++, y++) {
-        // printf("Rendering x %d y %d\n", x, y);
-
-
         color = ZERO;
         //antialiasing done by computing 25 stratified samples per pixel
         for (float s = -.4f; s < .6f; s+=.2f) {
@@ -478,7 +439,7 @@ void renderThreaded(Scene* scene, KDtree* tree, float* img, int lo_index, int hi
               r = 0.0;
             }
 
-            //PBRT CAMERA DEPTH OF FIELD
+            //Depth of field calculation
             if(camera->lensRadius > 0.0){
               //generate random sample, 
               float disk_u1 = drand48();
@@ -506,10 +467,7 @@ void renderThreaded(Scene* scene, KDtree* tree, float* img, int lo_index, int hi
               //Compute point on plane of focus
               float ft = fabs(camera->focalDepth - camera->point.z)/ray.vector.z;
               vec3 Pfocus = subtract(camera->point, scale(ray.vector, ft));
-              // printf("Point of focus (%f, %f, %f)\n", Pfocus.x, Pfocus.y, Pfocus.z);
-              //Update ray
-              // ray.vector = subtract(Pfocus, uniform_diskSample);
-              // ray.vector = unitVector(add(eyeVector, ray.vector));
+              //update ray.vector
               ray.vector = unitVector(subtract(Pfocus, ray.point));
             }
             //if lens is pinhole, then standard ray.point and direction calculation
@@ -519,8 +477,6 @@ void renderThreaded(Scene* scene, KDtree* tree, float* img, int lo_index, int hi
               vec3 ycomp = scale(vpUp, ((y+r) * pixelHeight) - halfHeight);
               ray.vector = unitVector(add3(eyeVector, xcomp, ycomp));
             }
-            // printf("Ray point (%f, %f, %f); ray vector (%f, %f, %f)\n", ray.point.x, ray.point.y, ray.point.z, ray.vector.x, ray.vector.y, ray.vector.z);
-
 
             //Direct lighting
             vec3 pointAtTime = ray.point; //first intersection point is ray origin
@@ -539,9 +495,7 @@ void renderThreaded(Scene* scene, KDtree* tree, float* img, int lo_index, int hi
             // Ray indirect_ray;
             //While random chance > termination probability, shoot more rays
             while((num_samples < 3) || (drand48() < Russian_Roulette)){
-              // printf("Russian roulette passed !\n");
               //Construct indirect ray
-              //what is indirect_ray?
               ray.point = pointAtTime;
               //Monte carlo sample the new direction:
               u1 = drand48();
@@ -551,15 +505,10 @@ void renderThreaded(Scene* scene, KDtree* tree, float* img, int lo_index, int hi
               indirect_direction.z = ray.point.z + u1;
               //Get new ray's direction
               ray.vector = unitVector(subtract(indirect_direction, ray.point)); 
-              // printf("INDIRECT Ray point (%f, %f, %f); ray vector (%f, %f, %f)\n", ray.point.x, ray.point.y, ray.point.z, ray.vector.x, ray.vector.y, ray.vector.z);
               //what is current throughput?
-              throughput = (1.0/PI) * throughput; //throughput is based off of diffuse reflectance
-
-              // printf("new ray.point = (%f, %f, %f); new ray.vector = (%f, %f, %f)\n", ray.point.x, ray.point.y, ray.point.z, ray.vector.x, ray.vector.y, ray.vector.z);
-              
+              throughput = (1.0/PI) * throughput; //throughput is based off of diffuse reflectance              
               //Scale the first two bounces by throughput
               if(num_samples < 3){
-                // indirect_color = add(indirect_color, trace(&ray, scene, tree, &pointAtTime));
                 indirect_color = add(indirect_color, scale(trace(&ray, scene, tree, &pointAtTime, &contribution), throughput));
               }
               //don't scale roulette, due to averaging later
@@ -570,16 +519,10 @@ void renderThreaded(Scene* scene, KDtree* tree, float* img, int lo_index, int hi
 
               //Calculate roulette value for next go
               Russian_Roulette = contribution;
-              // printf("Russian_Roulette = %f\n", Russian_Roulette);
             }
             if(num_samples > 2){
-              // printf("at x=%d y=%d, BEFORE SCALING Indirect Color is (%f, %f, %f)\n", x, y, indirect_color.x, indirect_color.y, indirect_color.z);
               float indirect_scale = 1.0/(num_samples-2.0);
-              // printf("indirect_scale = %f\n", indirect_scale);
               indirect_roulette = scale(indirect_roulette, indirect_scale);
-              if(indirect_roulette.x != 0 && indirect_roulette.y != 0 && indirect_roulette.z != 0){
-                // printf("at x=%d y=%d, Indirect roulette is (%f, %f, %f)\n", x, y, indirect_roulette.x, indirect_roulette.y, indirect_roulette.z);
-              }
               //Total color is:
               color = add(color, indirect_color); //direct plus 2 bounces
               color = add(color, indirect_roulette); //for roulette passes
@@ -589,23 +532,18 @@ void renderThreaded(Scene* scene, KDtree* tree, float* img, int lo_index, int hi
             if(LOW_SAMPLE_FLAG){
               break;
             }
-
           }
           if(LOW_SAMPLE_FLAG){
             break;
           }
         }
-
-        // printf("at x=%d y=%d, Color is (%f, %f, %f)\n", x, y, color.x, color.y, color.z);
+        //Write final color to image buffer
         color = scale(color, 0.04);
-
         int index = (x * 4) + (img_y * width * 4);
-        // printf("index is :%d\n", index);
         img[index + 0] = 0.0f;
         img[index + 1] = color.x;
         img[index + 2] = color.y;
         img[index + 3] = color.z;
-
     }
   }
 }
@@ -794,13 +732,12 @@ int main (int argc, char *argv[]){
 
   free(imgData);
   /////////////////////////////////////////
-
   free(img);
   for(int i=0; i<NUM_THREADS; i++){
     free(img_chunk[i]);
   }
-  // Scene is destructed automatically ~SCEscene()
-  //destruct the kd_tree??
+  root->~KDnode();
+  //scene.~SCEscene() is auto called at end of scope
 
   //end timing
   current_utc_time(&end);
@@ -808,7 +745,6 @@ int main (int argc, char *argv[]){
   elapsed = (end.tv_sec - start.tv_sec);
   elapsed += (end.tv_nsec - start.tv_nsec)/1000000000.0;
   printf("Time elapsed %f seconds\n", elapsed);
-
 
   return 0;
 }

@@ -1,0 +1,86 @@
+simple.bin
+Time elapsed 10.582470 seconds
+
+simple_hi_1t_noDOF.png
+Time elapsed 1317.184183 seconds (21 minutes)
+
+simple_hi_8t_noDOF.png
+Time elapsed 311.049388 seconds (5 minutes)
+
+simple_hi_16t_noDOF.png
+Time elapsed 291.204044 seconds
+
+
+simple_hi_16_DOF.png
+Time elapsed 324.385786 seconds
+
+simple_hi_8t_var_DOF.png
+Time elapsed 287.889639 seconds (tolerance at 0.000001f)
+
+simple_hi_8t_var2_DOF.png
+Time elapsed 291.797053 seconds (tolerance at 0.000000001f)
+
+===
+
+Scene 3 with 8 threads
+Time elapsed 17.168000 seconds
+
+Scene 3 with 1 thread
+Time elapsed 68.600193 seconds
+///
+
+SCENE 2b (bunny):
+Scene 2b with 64 threads
+Time elapsed 96.909107 seconds
+
+Scene 2b with 32 threads
+Time elapsed 98.289859 seconds
+
+Scene 2b with 16 threads
+Time elapsed 105.386543 seconds
+
+Scene 2b with 8 threads
+Time elapsed 116.786129 seconds
+
+Scene 2b with 4 threads
+Time elapsed 135.698511 seconds
+
+Scene 2b with 2 threads
+Time elapsed 190.780939 seconds
+
+Scene 2b with 1 thread
+Time elapsed 266.440656 seconds
+
+With getNaiveMid()//////////////////////
+
+scene2b.png
+Time taken 1257 seconds 601 milliseconds
+(20 min)
+
+scene2b.png as scene2d.png
+after changing size to be saved in n_objects
+Time taken 237 seconds 256 milliseconds
+(a little under 4 mn) ~tolerable
+
+Before size is saved in n_objects
+scene1f.png
+Time taken 39 seconds 630 milliseconds
+
+Changed size to be saved in n_objects:
+scene1g.png
+Time taken 38 seconds 739 milliseconds
+
+With getCenterMid()////////////////////
+scene1g.png
+Time taken 123 seconds 532 milliseconds
+
+scene2c.png
+Time taken 773 seconds 515 milliseconds
+
+//with getNaiveMid()
+scene2c.png
+Time taken 156 seconds 961 milliseconds
+
+
+
+

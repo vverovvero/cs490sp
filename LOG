@@ -243,7 +243,7 @@ Sources on sampling:
 http://paulbourke.net/miscellaneous/aliasing/
 (Gaussian filter would be applied over stochastic samples over one pixel)
 
-5/1: Code cleanup to do
+5/1, 5/2: Code cleanup to do
 USER INPUTS
 +++factor out DOF information; put into camera struct and user input scene (lensRadius and focalDepth)
 +++add a low sample, high sample option to render loop, pass in as a command line arg 
@@ -252,11 +252,14 @@ xxx-add variance calculation for sampling (might take this away)
 +++add getopt for LOW_SAMPLE_FLAG
 +++add HEIGHT and WIDTH to be specified by user, separate from main.h
 +++add way to input boundMin and boundMax, so not hard coded
++++create a shell script for making and running, on multiple images
 
----add materials like glass
 ---add soft shadows for lighting
+---add glass
+---add other materials
 
----create a shell script for making and running, on multiple images
+
+
 
 
 CODE CLEANUP
@@ -264,10 +267,9 @@ CODE CLEANUP
 +++add a check that num_threads divides HEIGHT (cap is probably ~32, 64)
 +++free the image chunks
 +++clean up SCEparser.h, functions should be defined in SCEparser.cpp
----also clean up where to put scene intersection vs. kdtree intersection
----replace reference to FLT_MAX with INFINITY macro
----clean up intersect scene functions (ie. intersectBox)
----add destructor for KDtree and KDnode
++++replace reference to FLT_MAX with INFINITY macro
++++also clean up where to put scene intersection vs. kdtree intersection
++++add destructor for KDtree and KDnode
 
 
 

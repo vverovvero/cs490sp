@@ -18,8 +18,9 @@ master 	(last stable release)
 wip 	(developing next feature in LOG)
 
 ---------------------------------------------------------------------
-/**************** Compiling and Rendering **************************/
+/**************** Compiling & Makefile notes ***********************/
 ---------------------------------------------------------------------
+**EDIT THIS DESCRIPTION
 
 This path tracer was developed on MacOSX in C++.  The cairo image library needs to be installed.
 
@@ -37,6 +38,15 @@ Change the .h file that is loaded if you would like to change the scene file.
 Change the output file name in the cairo png generation loop.
 
 The output of this program is a .png that shows the rendered scene.
+
+---------------------------------------------------------------------
+/*********************** Shell Scripts *****************************/
+---------------------------------------------------------------------
+./makebin.sh [file.sce] [file.bin]
+./makepng.sh [file.bin] [file.png] [res]
+
+Relies on subdirectories sce, bin, png
+res can be low or high
 
 ---------------------------------------------------------------------
 /*********************** Scene files *******************************/
@@ -122,6 +132,8 @@ Split points are selected by naively dividing the box in half along its longest 
 Interestingly, splitting by getting the average middle point did not perform well, and was significantly (in some case, by a factof of 4) slower than naive splitting.  Why would this be?
 
 According to some research online, the best way to build the kd-tree is by using the SAH heuristic.
+
+-discuss intersect.cpp, SCEparser.cpp, and main.cpp functions in acceleration/intersection
 
 ---------------------------------------------------------------------
 /***************** Unidirectional Path Tracing **********************/

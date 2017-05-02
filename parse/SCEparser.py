@@ -88,8 +88,8 @@ class Scene(object):
     	self.n_cameras += 1
 
     #add a light
-    def add_light(self, type, point, color):
-    	light = {'type': type, 'point': point, 'color': color}
+    def add_light(self, type, point, color, toPoint, angle, fallOffAngle):
+    	light = {'type': type, 'point': point, 'color': color, 'toPoint': toPoint, 'angle': angle, 'fallOffAngle': fallOffAngle}
     	self.lights.append(light)
     	self.n_lights += 1
 
@@ -185,7 +185,7 @@ class Scene(object):
 #Parser in cpp needs: (F for FLOAT_32, I for INT_32)
 #CMD_FLM I_width I_height
 #CMD_CAM F_Px F_Py F_Pz F_Tx F_Ty F_Tz F_FOV F_Ux F_Uy F_Uz F_R F_focalDepth
-#CMD_LGT I_Type F_Px F_Py F_Pz F_Cx F_Cy F_Cz
+#CMD_LGT I_Type F_Px F_Py F_Pz F_Cx F_Cy F_Cz F_toPx F_toPy F_toPz F_angle F_fallOff
 #CMD_MAT F_Cx F_Cy F_Cz I_Type I_Metal F_Spec F_Lam F_Amb F_exp
 #CMD_SPH F_Px F_Py F_Pz F_R	I_matIndex
 #CMD_TRI F_P1x F_P1y F_P1z F_P2x F_P2y F_P2z F_P3x F_P3y F_P3z I_matIndex
@@ -244,11 +244,14 @@ def writeB(scene, b_name):
 	for i in range(scene.n_lights):
 		light = scene.lights[i]
 		t = BitArray()
-		t = bitstring.pack("2*int:32, 6*float:32", 2,
+		t = bitstring.pack("2*int:32, 11*float:32", 2,
 			light['type'], 
 			light['point'][0], light['point'][1], light['point'][2], 
-			light['color'][0], light['color'][1], light['color'][2])
-		print t.unpack("2*int:32, 6*float:32")
+			light['color'][0], light['color'][1], light['color'][2],
+			light['toPoint'][0], light['toPoint'][1], light['toPoint'][2],
+			light['angle'],
+			light['fallOffAngle'])
+		print t.unpack("2*int:32, 11*float:32")
 		s = s + t
 
 	#Materials
@@ -419,6 +422,10 @@ class Parser(object):
 
 	def light(self, scene, attributes):
 		light_args = dict()
+		#set defaults for toPoint, angle, falloff
+		light_args["ToPoint"] = (0, 0, 0)
+		light_args["Angle"] = 0
+		light_args["FallOffAngle"] = 0
 		for attribute in attributes:
 			(function, args_list) = getAttr(attribute)
 			if function == "Type":
@@ -433,9 +440,15 @@ class Parser(object):
 				light_args["Point"] = (args_list[0], args_list[1], args_list[2])
 			elif function == "Color":
 				light_args["Color"] = (args_list[0], args_list[1], args_list[2])
+			elif function == "ToPoint":
+				light_args["ToPoint"] = (args_list[0], args_list[1], args_list[2])
+			elif function == "Angle":
+				light_args["Angle"] = args_list[0]
+			elif function == "FallOffAngle":
+				light_args["FallOffAngle"] = args_list[0] 
 			else:
 				print "Invalid Light attribute: " + function
-		scene.add_light(light_args["Type"], light_args["Point"], light_args["Color"])
+		scene.add_light(light_args["Type"], light_args["Point"], light_args["Color"], light_args["ToPoint"], light_args["Angle"], light_args["FallOffAngle"])
 
 	def material(self, scene, attributes):
 		mat_args = dict()

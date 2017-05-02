@@ -47,6 +47,9 @@ typedef struct Light{
   lightType type;
   vec3 point;
   vec3 color;
+  vec3 toPoint;
+  float angle;
+  float fallOffAngle;
 } Light;
 
 typedef struct Sphere{

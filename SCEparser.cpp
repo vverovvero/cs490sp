@@ -303,12 +303,15 @@ void SCEscene::add_camera(vec3 point, vec3 toPoint, float fieldOfView, vec3 up, 
 	this->cameras.push_back(*camera);
 }
 
-void SCEscene::add_light(lightType type, vec3 point, vec3 color){
+void SCEscene::add_light(lightType type, vec3 point, vec3 color, vec3 toPoint, float angle, float fallOffAngle){
 	Light* light;
 	light = (Light *) malloc(sizeof(struct Light));
 	light->type = type;
 	light->point = point;
 	light->color = color;
+	light->toPoint = toPoint;
+	light->angle = angle;
+	light->fallOffAngle = fallOffAngle;
 
 	this->lights.push_back(*light);
 }
@@ -430,9 +433,12 @@ void SCEscene::print_scene(){
 	//Lights
 	for(int i=0; i<this->s_scene.n_lights; i++){
 		Light light = this->s_scene.lights[i];
-		printf("Light type=%d, point=(%f, %f, %f), color=(%f, %f, %f)\n",
+		printf("Light type=%d, point=(%f, %f, %f), color=(%f, %f, %f), toPoint=(%f, %f, %f), angle=%f, fallOffAngle=%f\n",
 			light.type, light.point.x, light.point.y, light.point.z,
-			light.color.x, light.color.y, light.color.z);
+			light.color.x, light.color.y, light.color.z,
+			light.toPoint.x, light.toPoint.y, light.toPoint.z,
+			light.angle,
+			light.fallOffAngle);
 	}
 	//Materials
 	for(int i=0; i<this->s_scene.n_materials; i++){
@@ -562,14 +568,14 @@ void Parse::camera(FILE *f, SCEscene *scene){
 void Parse::light(FILE *f, SCEscene *scene){
 	int i, value, retval, swapped;
 	lightType l_type;
-	float a[6];
+	float a[11];
 	//Get light type
 	if((retval = fread(&value, 4, 1, f)) > 0){
 		swapped = swapEndian(value);
 		l_type = this->toLightType[swapped];
 	}
 	//Get float args for light
-	for(i=0;i<6;i++){
+	for(i=0;i<11;i++){
 		if((retval = fread(&value, 4, 1, f)) > 0){
 			swapped = swapEndian(value);
 			a[i] = IEEEInttoFloat(swapped);
@@ -578,9 +584,12 @@ void Parse::light(FILE *f, SCEscene *scene){
 	//Construct vecs
 	vec3 point = {.x=a[0], .y=a[1], .z=a[2]};
 	vec3 color = {.x=a[3], .y=a[4], .z=a[5]};
+	vec3 toPoint = {.x=a[6], .y=a[7], .z=a[8]};
+	float angle = a[9];
+	float fallOffAngle = a[10];
 
 	//Add light
-	(*scene).add_light(l_type, point, color);
+	(*scene).add_light(l_type, point, color, toPoint, angle, fallOffAngle);
 }
 
 void Parse::material(FILE *f, SCEscene *scene){

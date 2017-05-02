@@ -108,6 +108,11 @@ typedef struct Dist{
   Object* object;
 } Dist;
 
+typedef struct Visible{
+  int isVisible; //1 if true, 0 if false
+  float intensity;
+} Visible;
+
 typedef struct Pixel{
   unsigned char A;
   unsigned char R;

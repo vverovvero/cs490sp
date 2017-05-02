@@ -89,7 +89,7 @@ Dist intersectObjectList(Ray* ray, vector<struct Object*>* shortList);
 float intersectBox(Ray* ray, KDnode* node);
 void intersectKD(Ray *ray, KDnode* node, vector<struct Object*>* shortList);
 Dist intersectSceneAccel(Ray *ray, KDnode* node);
-int isLightVisible(vec3 point, Scene* scene, KDtree* tree, Light light);
+Visible isLightVisible(vec3 point, Scene* scene, KDtree* tree, Light light);
 vec3 surface(Ray* ray, Scene* scene, KDtree* tree, Object* object, vec3 pointAtTime, vec3 normal, float *contribution);
 vec3 trace(Ray* ray, Scene* scene, KDtree* tree, vec3 *pointAtTime, float *contribution);
 void renderThreaded(Scene* scene, KDtree* tree, float* img, int lo_index, int hi_index, bool low_sample_flag);
@@ -332,27 +332,27 @@ Dist intersectSceneAccel(Ray *ray, KDnode* node){
   return intersectObjectList(ray, &shortList);
 }
 
-int isLightVisible(vec3 point, Scene* scene, KDtree* tree, Light light) {
+Visible isLightVisible(vec3 point, Scene* scene, KDtree* tree, Light light) {
   vec3 lightPoint = light.point;
   vec3 full_vector = subtract(lightPoint,point);
   vec3 vector = unitVector(subtract(lightPoint, point));
   Ray ray = { .point = point, .vector = vector};
 
   Dist distObject = intersectSceneAccel(&ray, (*tree).get_kdtree());
-  int visibility; 
-  float scale;
+  Visible vis;
 
   //get visibility, same for all lights
   if (distObject.distance > 0.0f && distObject.distance < (length(full_vector) -.005)) {
-    visibility = 0; // False case where an object is found between the point and the light
+    vis.isVisible = 0; // False case where an object is found between the point and the light
   }
   else {
-    visibility = 1; // Either negative (no collision at all) or >length(vector) (light is closer than collision)
+    vis.isVisible = 1; // Either negative (no collision at all) or >length(vector) (light is closer than collision)
   }
 
   //if omni, return (visibility, scale=1)
   if(light.type == OMNI){
-    return visibility;
+    vis.intensity = 1.0;
+    return vis;
   }
 
   //if spot, recalculate visibility?  return (visibility, scale)
@@ -365,12 +365,17 @@ int isLightVisible(vec3 point, Scene* scene, KDtree* tree, Light light) {
     float C = A/B;
     float angle = (180 * acos(C))/PI;
 
-    return (visibility && (angle <= light.angle));
+    vis.isVisible = (vis.isVisible && (angle <= light.angle));
+
+    //set intensity by scaling
+    vis.intensity = 1.0; //dummy
+
+    return vis;
   }
 
   else{
     fprintf(stderr, "Unimplemented light type!\n");
-    return visibility;
+    return vis;
   }
   
 }
@@ -387,8 +392,9 @@ vec3 surface(Ray* ray, Scene* scene, KDtree* tree, Object* object, vec3 pointAtT
       Light light = scene->lights[i];
       vec3 lightPoint = light.point;
 
-      //pass in entire light for isLightVisible
-      if (isLightVisible(pointAtTime, scene, tree, light)){
+      //pass in light and calculate Visible struct
+      Visible vis = isLightVisible(pointAtTime, scene, tree, light);
+      if (vis.isVisible){
         // lambertian reflectance
         *contribution = dotProduct(unitVector(subtract(lightPoint, pointAtTime)), normal);
 

@@ -1,3 +1,5 @@
+//main.h                                                      Wendy Chen, 2017
+
 #ifndef MAIN_H
 #define MAIN_H
 

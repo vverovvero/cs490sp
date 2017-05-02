@@ -263,11 +263,11 @@ CODE CLEANUP
 +++add threaded render (4 threads)
 +++add a check that num_threads divides HEIGHT (cap is probably ~32, 64)
 +++free the image chunks
----add destructor for KDtree and KDnode
----clean up SCEparser.h, functions should be defined in SCEparser.cpp
++++clean up SCEparser.h, functions should be defined in SCEparser.cpp
 ---also clean up where to put scene intersection vs. kdtree intersection
 ---replace reference to FLT_MAX with INFINITY macro
 ---clean up intersect scene functions (ie. intersectBox)
+---add destructor for KDtree and KDnode
 
 
 

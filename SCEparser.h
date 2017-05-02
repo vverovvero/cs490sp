@@ -1,10 +1,10 @@
-//SCEparser.h													Wendy Chen, 2/2017
+//SCEparser.h													Wendy Chen, 2017
 
-//Contains #include, using, and functions for the graph class
+//Contains classes SCEscene, Parse, KDnode, KDtree
 
 //Workflow.  sce -> scene object for intermediate parsing, using parser object
 //			scene object -> internal structs, using scene object
-
+//			internal structs -> kd-tree
 
 #ifndef SCEPARSER_H
 #define SCEPARSER_H
@@ -57,25 +57,16 @@ public:
 	void add_sphere(vec3 point, float radius, int matIndex);
 	void add_triangle(vec3 point1, vec3 point2, vec3 point3, int matIndex);
 	void add_boundbox(vec3 min, vec3 max);
-
+	//build the scene
 	void build_scene();
 	Scene * get_scene();
 	vector<struct Object>* get_objects();
-
+	//sanity check
 	void print_scene();
-
-	void free_cameras(); //not needed
-	void free_lights();  //not needed
-	void free_materials();  //not needed
+	//destructors
 	void free_spheres();
 	void free_triangles();
-	void free_objects();  //not needed
-
-	~SCEscene(){
-		//free the vectors that contain pointers
-		free_spheres();
-		free_triangles();
-	}
+	~SCEscene();
 };
 
 
@@ -90,7 +81,7 @@ private:
 
 public:
 	Parse();
-
+	//constructors for updating SCEscene scene
 	void film(FILE *f, SCEscene *scene);
 	void camera(FILE *f, SCEscene *scene);
 	void light(FILE *f, SCEscene *scene);
@@ -128,24 +119,12 @@ public:
 	pair<vec3, vec3> getBoundsFromMid();
 	void populate(KDnode* parent);
 	void split();
-	//print node and its children
 	void print();
-	//getter functions
-	vector<struct Object*>* getObjects(){
-		return &(this->objects);
-	}
-	vec3 getMin(){
-		return this->min;
-	}
-	vec3 getMax(){
-		return this->max;
-	}
-	KDnode* getLeft(){
-		return this->left;
-	}
-	KDnode* getRight(){
-		return this->right;
-	}
+	vector<struct Object*>* getObjects();
+	vec3 getMin();
+	vec3 getMax();
+	KDnode* getLeft();
+	KDnode* getRight();	
 	//think about destruction
 	~KDnode();
 };

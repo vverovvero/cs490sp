@@ -1,3 +1,4 @@
+#SCEparser.py 																Wendy Chen, 2017
 ############################################################################################
 # Read in SCE file that contains a user friendly scene description.
 # Use:

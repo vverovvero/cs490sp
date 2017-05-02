@@ -1,3 +1,4 @@
+//main.cpp                                                      Wendy Chen, 2017
 /***************************** Compilation notes *******************************/
 // Use provided Makefile
 // ***OR****

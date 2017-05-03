@@ -255,15 +255,15 @@ xxx-add variance calculation for sampling (might take this away)
 +++create a shell script for making and running, on multiple images
 +++add spot light
 +++add area/spherical light (just need a radius for this)
++++add other materials (phong shading)
 
-
----add glass
----add other materials
-
-
+---add glass/refractive
 
 
 
+
+
+ 
 CODE CLEANUP
 +++add threaded render (4 threads)
 +++add a check that num_threads divides HEIGHT (cap is probably ~32, 64)

@@ -20,6 +20,8 @@ MATERIAL Color(90, 90, 255) Type(ORIGINAL) Metal(0) Specular(0) Lambert(0.9) Amb
 MATERIAL Color(255, 90, 90) Type(ORIGINAL) Metal(0) Specular(0.1) Lambert(0.9) Ambient(0) Exponent(0)
 #5
 MATERIAL Color(200, 170, 60) Type(PHONG) Metal(1) Specular(0.5) Lambert(0.4) Ambient(0.1) Exponent(2)
+#6
+MATERIAL Type(REFRACTIVE) Color(189, 198, 209) Specular(1.5) Lambert(0.65) Ambient(0.2) IndexOfRefraction(1.560) Reflection(0.2) Transmission(0.8)
 
 
 SPHERE Point(70, 25, 50) Radius(25) Material(5)

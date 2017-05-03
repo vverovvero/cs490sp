@@ -364,12 +364,20 @@ Visible isLightVisible(vec3 point, Scene* scene, KDtree* tree, Light light) {
     float B = length(spotVector) * length(full_vector);
     float C = A/B;
     float angle = (180 * acos(C))/PI;
+    float angle_radians = acos(C);
 
     vis.isVisible = (vis.isVisible && (angle <= light.angle));
 
-    //set intensity by scaling
-    vis.intensity = 1.0; //dummy
-
+    //set intensity by scaling if beyond falloff (from PBRT p. 611 - 614)
+    if(angle > light.fallOffAngle){
+      float light_angle_radians = light.angle * PI/180;
+      float light_fallOffAngle_radians = light.fallOffAngle * PI/180;
+      float delta = (cos(angle_radians) - cos(light_angle_radians))/(cos(light_fallOffAngle_radians) - cos(light_angle_radians));
+      vis.intensity = delta * delta *delta * delta;
+    }
+    else{
+      vis.intensity = 1.0;
+    }
     return vis;
   }
 
@@ -397,6 +405,8 @@ vec3 surface(Ray* ray, Scene* scene, KDtree* tree, Object* object, vec3 pointAtT
       if (vis.isVisible){
         // lambertian reflectance
         *contribution = dotProduct(unitVector(subtract(lightPoint, pointAtTime)), normal);
+        //scale the contribution by vis intensity
+        *contribution = (*contribution) * vis.intensity;
 
         if(*contribution > 0.0f) {
           lambertAmount = add(lambertAmount, scale(scene->lights[i].color, *contribution));

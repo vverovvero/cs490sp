@@ -253,8 +253,9 @@ xxx-add variance calculation for sampling (might take this away)
 +++add HEIGHT and WIDTH to be specified by user, separate from main.h
 +++add way to input boundMin and boundMax, so not hard coded
 +++create a shell script for making and running, on multiple images
++++add spot light
 
----add soft shadows for lighting
+---add area/spherical light
 ---add glass
 ---add other materials
 

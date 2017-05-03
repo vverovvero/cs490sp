@@ -341,7 +341,7 @@ Visible isLightVisible(vec3 point, Scene* scene, KDtree* tree, Light light) {
   Dist distObject = intersectSceneAccel(&ray, (*tree).get_kdtree());
   Visible vis;
 
-  //get visibility, same for all lights
+  //get visibility from light's origin point, same for all lights
   if (distObject.distance > 0.0f && distObject.distance < (length(full_vector) -.005)) {
     vis.isVisible = 0; // False case where an object is found between the point and the light
   }
@@ -349,13 +349,13 @@ Visible isLightVisible(vec3 point, Scene* scene, KDtree* tree, Light light) {
     vis.isVisible = 1; // Either negative (no collision at all) or >length(vector) (light is closer than collision)
   }
 
-  //if omni, return (visibility, scale=1)
   if(light.type == OMNI){
     vis.intensity = 1.0;
+    vis.lightPoint = light.point;
     return vis;
   }
 
-  //if spot, recalculate visibility?  return (visibility, scale)
+  //if spot, recalculate visibility? scale the intensity
   else if(light.type == SPOT){
     vec3 toPoint = light.toPoint;
     vec3 spotVector = subtract(lightPoint, toPoint);
@@ -378,6 +378,38 @@ Visible isLightVisible(vec3 point, Scene* scene, KDtree* tree, Light light) {
     else{
       vis.intensity = 1.0;
     }
+    vis.lightPoint = light.point;
+    return vis;
+  }
+
+  //if spherical, generate light sample by ray-sphere intersection
+  else if(light.type == SPHERICAL){
+    //sample a point on the sphere's surface
+    float u1 = drand48();
+    float u2 = drand48();
+    float xy_term = 2.0 * sqrtf(u1 * (1-u1));
+    float x = cos(2.0*PI*u2)*xy_term;
+    float y = sin(2.0*PI*u2)*xy_term;
+    float z = 1.0 - 2.0*u1;
+    vec3 sphereSample = {.x=x, .y=y, .z=z};
+    vis.lightPoint = add(scale(sphereSample, light.radius), light.point);
+
+    //calculate dist object from constructed array
+    full_vector = subtract(vis.lightPoint, point);
+    ray = { .point = point, .vector = unitVector(full_vector)};
+    distObject = intersectSceneAccel(&ray, (*tree).get_kdtree());
+    
+    //set visibility
+    if (distObject.distance > 0.0f && distObject.distance < (length(full_vector) -.005)) {
+      vis.isVisible = 0; // False case where an object is found between the point and the light
+    }
+    else {
+      vis.isVisible = 1; // Either negative (no collision at all) or >length(vector) (light is closer than collision)
+    }
+
+    //set intensity
+    vis.intensity = 1.0;
+    //dummy return
     return vis;
   }
 
@@ -398,13 +430,12 @@ vec3 surface(Ray* ray, Scene* scene, KDtree* tree, Object* object, vec3 pointAtT
   if (material->lambert > 0.0f) {
     for (int i = 0; i < scene->n_lights; i++) {
       Light light = scene->lights[i];
-      vec3 lightPoint = light.point;
 
       //pass in light and calculate Visible struct
       Visible vis = isLightVisible(pointAtTime, scene, tree, light);
       if (vis.isVisible){
         // lambertian reflectance
-        *contribution = dotProduct(unitVector(subtract(lightPoint, pointAtTime)), normal);
+        *contribution = dotProduct(unitVector(subtract(vis.lightPoint, pointAtTime)), normal);
         //scale the contribution by vis intensity
         *contribution = (*contribution) * vis.intensity;
 

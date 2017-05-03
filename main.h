@@ -41,7 +41,7 @@ typedef struct Camera{
   float focalDepth;
 } Camera;
 
-typedef enum {OMNI, SPOT} lightType;
+typedef enum {OMNI, SPOT, SPHERICAL} lightType;
 
 typedef struct Light{
   lightType type;
@@ -50,6 +50,7 @@ typedef struct Light{
   vec3 toPoint;
   float angle;
   float fallOffAngle;
+  float radius;
 } Light;
 
 typedef struct Sphere{
@@ -111,6 +112,7 @@ typedef struct Dist{
 typedef struct Visible{
   int isVisible; //1 if true, 0 if false
   float intensity;
+  vec3 lightPoint; //record the intersection with point on light
 } Visible;
 
 typedef struct Pixel{

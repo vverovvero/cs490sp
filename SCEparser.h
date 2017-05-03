@@ -52,7 +52,7 @@ public:
 	//add_camera, add_light, to a list in private
 	void add_film(int width, int height);
 	void add_camera(vec3 point, vec3 toPoint, float fieldOfView, vec3 up, float lensRadius, float focalDepth);
-	void add_light(lightType type, vec3 point, vec3 color, vec3 toPoint, float angle, float fallOffAngle);
+	void add_light(lightType type, vec3 point, vec3 color, vec3 toPoint, float angle, float fallOffAngle, float radius);
 	void add_material(vec3 color, materialType type, int metal, float specular, float lambert, float ambient, float exponent);
 	void add_sphere(vec3 point, float radius, int matIndex);
 	void add_triangle(vec3 point1, vec3 point2, vec3 point3, int matIndex);

@@ -255,7 +255,7 @@ xxx-add variance calculation for sampling (might take this away)
 +++create a shell script for making and running, on multiple images
 +++add spot light
 
----add area/spherical light
+---add area/spherical light (just need a radius for this)
 ---add glass
 ---add other materials
 

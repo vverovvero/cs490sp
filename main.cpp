@@ -409,7 +409,7 @@ Visible isLightVisible(vec3 point, Scene* scene, KDtree* tree, Light light) {
 
     //set intensity
     vis.intensity = 1.0;
-    //dummy return
+
     return vis;
   }
 
@@ -425,14 +425,16 @@ vec3 surface(Ray* ray, Scene* scene, KDtree* tree, Object* object, vec3 pointAtT
   vec3 objColor = material->color;
   vec3 c = ZERO;
   vec3 lambertAmount = ZERO;
+  vec3 specReflect = ZERO;
+  Visible vis;
+
+  //check glass type first and return
 
   // lambert shading
   if (material->lambert > 0.0f) {
     for (int i = 0; i < scene->n_lights; i++) {
-      Light light = scene->lights[i];
-
       //pass in light and calculate Visible struct
-      Visible vis = isLightVisible(pointAtTime, scene, tree, light);
+      vis = isLightVisible(pointAtTime, scene, tree, scene->lights[i]);
       if (vis.isVisible){
         // lambertian reflectance
         *contribution = dotProduct(unitVector(subtract(vis.lightPoint, pointAtTime)), normal);
@@ -451,6 +453,49 @@ vec3 surface(Ray* ray, Scene* scene, KDtree* tree, Object* object, vec3 pointAtT
   lambertAmount = scale(lambertAmount, material->lambert);
   lambertAmount = scale(lambertAmount, 1./255.);
 
+  //Specular pass
+  if(material->specular > 0.0f){
+    Ray reflectedRay = {.point=pointAtTime, .vector=reflectThrough(scale(ray->vector, -1), normal)};
+    vec3 reflectedColor = trace(&reflectedRay, scene, tree, &pointAtTime, contribution);
+    if(length(reflectedColor) > 0.0f){
+      c = add(c, scale(reflectedColor, material->specular));
+    }
+
+    //Phong/metal pass
+    if(material->type == PHONG){
+      for(int i=0; i<scene->n_lights; i++){
+        vis = isLightVisible(pointAtTime, scene, tree, scene->lights[i]);
+        if(vis.isVisible){
+          vec3 eye = scene->camera->point;
+          vec3 vectorV = unitVector(subtract(pointAtTime, eye));
+          vec3 vectorL = unitVector(subtract(pointAtTime, vis.lightPoint));
+          vec3 vectorN = unitVector(normal);
+          vec3 vectorH = unitVector(add(vectorV, vectorL));
+
+          float dotHN = dotProduct(vectorH, vectorN);
+          float dotHNX = pow(dotHN, material->exponent);
+          float scalar = material->specular * dotHNX;
+          vec3 vectorC;
+          vec3 irradiance;
+
+          //update c, based off metal
+          if(material->metal == 0){
+            vectorC = scene->lights[i].color;
+            irradiance = scale(vectorC, scalar);
+            c = add(c, irradiance);
+          }
+          else{
+            vectorC = material->color;
+            irradiance = scale(vectorC, scalar);
+            c = add(c, irradiance);
+          }
+
+        }
+      }
+    }
+  }
+
+  //Ambient pass
   return add3(c, lambertAmount, scale(objColor, material->ambient));
 }
 

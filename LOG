@@ -243,7 +243,7 @@ Sources on sampling:
 http://paulbourke.net/miscellaneous/aliasing/
 (Gaussian filter would be applied over stochastic samples over one pixel)
 
-5/1, 5/2: Code cleanup to do
+5/1, 5/2, 5/3: Code cleanup to do
 USER INPUTS
 +++factor out DOF information; put into camera struct and user input scene (lensRadius and focalDepth)
 +++add a low sample, high sample option to render loop, pass in as a command line arg 
@@ -254,8 +254,9 @@ xxx-add variance calculation for sampling (might take this away)
 +++add way to input boundMin and boundMax, so not hard coded
 +++create a shell script for making and running, on multiple images
 +++add spot light
++++add area/spherical light (just need a radius for this)
 
----add area/spherical light (just need a radius for this)
+
 ---add glass
 ---add other materials
 

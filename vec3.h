@@ -86,4 +86,18 @@ static inline vec3 reflectThrough(vec3 a, vec3 normal) {
     vec3 d = scale(normal, dotProduct(a, normal));
     return subtract(scale(d, 2.0f), a);
 }
+
+//return refracted ray, or zero for no refraction
+static inline vec3 refractThrough(vec3 V, vec3 N, float nr){
+  float discriminant = 1 - pow(nr, 2) * (1 - pow(dotProduct(N, V), 2));
+  if(discriminant < 0){
+    return ZERO;
+  }
+  else{
+    float scalar = (nr*dotProduct(N, V) - sqrtf(discriminant));
+    vec3 first_term = scale(N, scalar);
+    vec3 T = subtract(first_term, scale(V, nr));
+    return T;
+  }
+}
 #endif

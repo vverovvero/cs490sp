@@ -87,17 +87,46 @@ static inline vec3 reflectThrough(vec3 a, vec3 normal) {
     return subtract(scale(d, 2.0f), a);
 }
 
-//return refracted ray, or zero for no refraction
-static inline vec3 refractThrough(vec3 V, vec3 N, float nr){
-  float discriminant = 1 - pow(nr, 2) * (1 - pow(dotProduct(N, V), 2));
-  if(discriminant < 0){
-    return ZERO;
-  }
-  else{
-    float scalar = (nr*dotProduct(N, V) - sqrtf(discriminant));
-    vec3 first_term = scale(N, scalar);
-    vec3 T = subtract(first_term, scale(V, nr));
-    return T;
-  }
+
+//may need
+static inline float clip(float n, float lower, float upper) {
+  return fmax(lower, fmin(n, upper));
 }
+
+//consider:
+//https://www.scratchapixel.com/lessons/3d-basic-rendering/introduction-to-shading/reflection-refraction-fresnel
+//return refracted ray, or zero for no refraction
+static inline vec3 refractThrough(vec3 I, vec3 N, float ior){
+  float cosi = clip(dotProduct(I, N), -1, 1);
+  float etai = 1;
+  float etat = ior;
+  float temp;
+  vec3 n = N;
+  if(cosi < 0){
+    cosi = -cosi;
+  } else{
+    //swap
+    etai = temp;
+    etai = etat;
+    etat = temp;
+    n = scale(N, -1);
+  }
+  float eta = etai/etat;
+  float k = 1 - eta * eta * (1 - cosi * cosi);
+  return k < 0 ? ZERO : add(scale(I, eta), scale(n, (eta * cosi - sqrtf(k))));
+}
+
+
+// static inline vec3 refractThrough(vec3 V, vec3 N, float nr){
+//   float discriminant = 1 - pow(nr, 2) * (1 - pow(dotProduct(N, V), 2));
+//   if(discriminant < 0){
+//     return ZERO;
+//   }
+//   else{
+//     float scalar = (nr*dotProduct(N, V) - sqrtf(discriminant));
+//     vec3 first_term = scale(N, scalar);
+//     vec3 T = subtract(first_term, scale(V, nr));
+//     return T;
+//   }
+// }
 #endif

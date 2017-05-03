@@ -95,8 +95,9 @@ class Scene(object):
     	self.n_lights += 1
 
     #add a material
-    def add_material(self, color, type, metal, specular, lambert, ambient, exponent):
-    	material = {'color': color, 'type': type, 'metal': metal, 'specular': specular, 'lambert': lambert, 'ambient': ambient, 'exponent': exponent}
+    def add_material(self, color, type, metal, specular, lambert, ambient, exponent, indexOfRefraction, reflection, transmission):
+    	material = {'color': color, 'type': type, 'metal': metal, 'specular': specular, 'lambert': lambert, 'ambient': ambient, 'exponent': exponent, 
+    				'indexOfRefraction': indexOfRefraction, 'reflection': reflection, 'transmission': transmission}
     	self.materials.append(material)
     	self.n_materials += 1
 
@@ -187,7 +188,7 @@ class Scene(object):
 #CMD_FLM I_width I_height
 #CMD_CAM F_Px F_Py F_Pz F_Tx F_Ty F_Tz F_FOV F_Ux F_Uy F_Uz F_R F_focalDepth
 #CMD_LGT I_Type F_Px F_Py F_Pz F_Cx F_Cy F_Cz F_toPx F_toPy F_toPz F_angle F_fallOff F_R
-#CMD_MAT F_Cx F_Cy F_Cz I_Type I_Metal F_Spec F_Lam F_Amb F_exp
+#CMD_MAT F_Cx F_Cy F_Cz I_Type I_Metal F_Spec F_Lam F_Amb F_exp F_ior F_Kr F_Kt
 #CMD_SPH F_Px F_Py F_Pz F_R	I_matIndex
 #CMD_TRI F_P1x F_P1y F_P1z F_P2x F_P2y F_P2z F_P3x F_P3y F_P3z I_matIndex
 #CMD_BOX F_Min_x F_Min_y F_Min_z F_Max_x F_Max_y F_Max_z
@@ -200,6 +201,7 @@ class Scene(object):
 #materialType
 #0	ORIGINAL
 #1	PHONG
+#2	REFRACTIVE
 
 def writeB(scene, b_name): 
 	#Sanitization checks
@@ -261,11 +263,12 @@ def writeB(scene, b_name):
 	for i in range(scene.n_materials):
 		mat = scene.materials[i]
 		t = BitArray()
-		t = bitstring.pack("int:32, 3*float:32, 2*int:32, 4*float:32", 3,
+		t = bitstring.pack("int:32, 3*float:32, 2*int:32, 7*float:32", 3,
 			mat['color'][0], mat['color'][1], mat['color'][2], 
 			mat['type'], mat['metal'], 
-			mat['specular'], mat['lambert'], mat['ambient'], mat['exponent'])
-		print t.unpack("int:32, 3*float:32, 2*int:32, 4*float:32")
+			mat['specular'], mat['lambert'], mat['ambient'], mat['exponent'],
+			mat['indexOfRefraction'], mat['reflection'], mat['transmission'])
+		print t.unpack("int:32, 3*float:32, 2*int:32, 7*float:32")
 		s = s + t
 
 	#Spheres
@@ -460,6 +463,14 @@ class Parser(object):
 
 	def material(self, scene, attributes):
 		mat_args = dict()
+		#Set default args
+		#default args for PHONG
+		mat_args["Metal"] = 0
+		mat_args["Exponent"] = 0
+		#default args for REFRACTIVE
+		mat_args["IndexOfRefraction"] = 0
+		mat_args["Reflection"] = 0
+		mat_args["Transmission"] = 0
 		for attribute in attributes:
 			(function, args_list) = getAttr(attribute)
 			if function == "Color":
@@ -470,6 +481,8 @@ class Parser(object):
 					mat_args["Type"] = 0
 				elif type == "PHONG":
 					mat_args["Type"] = 1
+				elif type == "REFRACTIVE":
+					mat_args["Type"] = 2;
 				else:
 					print "Unconverted Material type: " + type
 			elif function == "Metal":
@@ -482,10 +495,16 @@ class Parser(object):
 				mat_args["Ambient"] = args_list[0]
 			elif function == "Exponent":
 				mat_args["Exponent"] = args_list[0]
+			elif function == "IndexOfRefraction":
+				mat_args["IndexOfRefraction"] = args_list[0]
+			elif function == "Reflection":
+				mat_args["Reflection"] = args_list[0]
+			elif function == "Transmission":
+				mat_args["Transmission"] = args_list[0]
 			else:
 				print "Invalid Material attribute: " + function
 		scene.add_material(mat_args["Color"], mat_args["Type"], mat_args["Metal"], mat_args["Specular"], mat_args["Lambert"],
-			mat_args["Ambient"], mat_args["Exponent"])
+			mat_args["Ambient"], mat_args["Exponent"], mat_args["IndexOfRefraction"], mat_args["Reflection"], mat_args["Transmission"])
 
 	def sphere(self, scene, attributes, defaultMaterial, defaultTransforms):
 		sphere_args = dict()

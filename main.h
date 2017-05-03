@@ -66,7 +66,7 @@ typedef struct Triangle{
   int matIndex;
 } Triangle;
 
-typedef enum {PHONG, ORIGINAL} materialType;
+typedef enum {PHONG, ORIGINAL, REFRACTIVE} materialType;
 
 typedef struct Material{
   vec3 color;
@@ -76,6 +76,9 @@ typedef struct Material{
   float lambert;
   float ambient;
   float exponent;
+  float indexOfRefraction; //ior
+  float reflection; //Kr
+  float transmission; //Kt
 } Material;
 
 typedef enum {SPHERE, TRIANGLE} objectType;

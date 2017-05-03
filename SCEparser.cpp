@@ -317,7 +317,7 @@ void SCEscene::add_light(lightType type, vec3 point, vec3 color, vec3 toPoint, f
 	this->lights.push_back(*light);
 }
 
-void SCEscene::add_material(vec3 color, materialType type, int metal, float specular, float lambert, float ambient, float exponent){
+void SCEscene::add_material(vec3 color, materialType type, int metal, float specular, float lambert, float ambient, float exponent, float indexOfRefraction, float reflection, float transmission){
 	Material* material;
 	material = (Material *) malloc(sizeof(struct Material));
 	material->color = color;
@@ -327,6 +327,9 @@ void SCEscene::add_material(vec3 color, materialType type, int metal, float spec
 	material->lambert = lambert;
 	material->ambient = ambient;
 	material->exponent = exponent;
+	material->indexOfRefraction = indexOfRefraction;
+	material->reflection = reflection;
+	material->transmission = transmission;
 	
 	this->materials.push_back(*material);
 }
@@ -445,10 +448,11 @@ void SCEscene::print_scene(){
 	//Materials
 	for(int i=0; i<this->s_scene.n_materials; i++){
 		Material material = this->s_scene.materials[i];
-		printf("Material type=%d, color=(%f, %f, %f), metal=%d, specular=%f, lambert=%f, ambient=%f, exponent=%f\n",
+		printf("Material type=%d, color=(%f, %f, %f), metal=%d, specular=%f, lambert=%f, ambient=%f, exponent=%f, indexOfRefraction=%f, reflection=%f, transmission=%f\n",
 			material.type, 
 			material.color.x, material.color.y, material.color.z,
-			material.metal, material.specular, material.lambert, material.ambient, material.exponent);
+			material.metal, material.specular, material.lambert, material.ambient, material.exponent,
+			material.indexOfRefraction, material.reflection, material.transmission);
 	}
 	//Objects
 	for(int i=0; i<this->s_scene.n_objects; i++){
@@ -496,6 +500,7 @@ Parse::Parse(){
 	//initialize toMaterialType hash
 	toMaterialType[0] = ORIGINAL;
 	toMaterialType[1] = PHONG;
+	toMaterialType[2] = REFRACTIVE;
 }
 
 // #Command codes:
@@ -601,7 +606,7 @@ void Parse::material(FILE *f, SCEscene *scene){
 	materialType m_type;
 	int metal_bool;
 	float c[3];
-	float a[4];
+	float a[7];
 	//Get color
 	for(i=0;i<3;i++){
 		if((retval = fread(&value, 4, 1, f)) > 0){
@@ -620,7 +625,7 @@ void Parse::material(FILE *f, SCEscene *scene){
 		metal_bool = swapped;
 	}
 	//Get remaining attrs
-	for(i=0;i<4;i++){
+	for(i=0;i<7;i++){
 		if((retval = fread(&value, 4, 1, f)) > 0){
 			swapped = swapEndian(value);
 			a[i] = IEEEInttoFloat(swapped);
@@ -632,8 +637,11 @@ void Parse::material(FILE *f, SCEscene *scene){
 	float lambert = a[1];
 	float ambient = a[2];
 	float exponent = a[3];
+	float indexOfRefraction = a[4];
+	float reflection = a[5];
+	float transmission = a[6];
 	//Add material
-	(*scene).add_material(color, m_type, metal_bool, specular, lambert, ambient, exponent);
+	(*scene).add_material(color, m_type, metal_bool, specular, lambert, ambient, exponent, indexOfRefraction, reflection, transmission);
 }
 
 //Get sphere args from binary file, add sphere to scene

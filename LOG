@@ -258,7 +258,7 @@ xxx-add variance calculation for sampling (might take this away)
 +++add other materials (phong shading)
 
 ---add glass/refractive
-
+https://www.scratchapixel.com/lessons/3d-basic-rendering/introduction-to-shading/reflection-refraction-fresnel
 
 
 
@@ -274,6 +274,10 @@ CODE CLEANUP
 +++add destructor for KDtree and KDnode
 
 
+
+5/3:
+-write up
+-scene design and production
 
 
 

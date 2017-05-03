@@ -429,9 +429,61 @@ vec3 surface(Ray* ray, Scene* scene, KDtree* tree, Object* object, vec3 pointAtT
   Visible vis;
 
   //check glass type first and return
+  //refractive pass
+  if(material->type == REFRACTIVE){
+    //get reflection
+    Ray reflectedRay = {
+      .point = pointAtTime,
+      .vector = reflectThrough(scale(ray->vector, -1), normal)
+    };
+    vec3 reflectedColor = trace(&reflectedRay, scene, tree, &pointAtTime, contribution);
+    //get refraction
+    Ray refractionRay = {
+      .point = pointAtTime,
+      .vector = reflectThrough(scale(ray->vector, -1), normal)
+      // .vector = unitVector(refractThrough(ray->vector, normal, material->indexOfRefraction))
+    };
+    // vec3 bias = {.x=0.1, .y=0.1, .z=0.1};
+    // if(dotProduct(ray->vector, normal) < 0){
+    //   refractionRay.point = add(pointAtTime, scale(bias, -1));
+    // }else{
+    //   refractionRay.point = add(pointAtTime, bias);
+    // }
+    printf("refractionRay (%f, %f, %f)\n", refractionRay.vector.x, refractionRay.vector.y, refractionRay.vector.z);
+    printf("pointAtTime (%f, %f, %f)\n", pointAtTime.x, pointAtTime.y, pointAtTime.z);
+    vec3 refractionColor;
+    if(length(refractionRay.vector) > 0.0f){
+      refractionColor = trace(&refractionRay, scene, tree, &pointAtTime, contribution);
+
+      ////////////////////
+      // printf("here1\n");
+      // //intersect into the scene
+      // Dist distObject = intersectSceneAccel(&refractionRay, (*tree).get_kdtree());
+
+      // //if hit something
+      // if(distObject.distance > 0.0f){
+      //   vec3 refractedPoint = add(refractionRay.point, scale(unitVector(refractionRay.vector), distObject.distance));
+      //   refractionColor = trace(&refractionRay, scene, tree, &refractedPoint, contribution);
+      // }
+      // else{
+      //   refractionColor = ZERO;
+      // }
+      
+      // printf("here2\n");
+      // printf("refractionColor %f, %f, %f\n", refractionColor.x, refractionColor.y, refractionColor.z);
+    }
+    else{
+      refractionColor = reflectedColor;
+    }
+    //sum up total color
+    if(length(reflectedColor) > 0.0f){
+      vec3 bothColor = add(scale(scale(reflectedColor, material->specular), material->reflection), scale(scale(refractionColor, material->specular), material->transmission));
+      c = add(c, bothColor);
+    }
+  }
 
   // lambert shading
-  if (material->lambert > 0.0f) {
+  if (material->lambert > 0.0f && material->type != REFRACTIVE) {
     for (int i = 0; i < scene->n_lights; i++) {
       //pass in light and calculate Visible struct
       vis = isLightVisible(pointAtTime, scene, tree, scene->lights[i]);
@@ -454,7 +506,7 @@ vec3 surface(Ray* ray, Scene* scene, KDtree* tree, Object* object, vec3 pointAtT
   lambertAmount = scale(lambertAmount, 1./255.);
 
   //Specular pass
-  if(material->specular > 0.0f){
+  if(material->specular > 0.0f && material->type != REFRACTIVE){
     Ray reflectedRay = {.point=pointAtTime, .vector=reflectThrough(scale(ray->vector, -1), normal)};
     vec3 reflectedColor = trace(&reflectedRay, scene, tree, &pointAtTime, contribution);
     if(length(reflectedColor) > 0.0f){

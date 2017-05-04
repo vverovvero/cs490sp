@@ -260,9 +260,6 @@ xxx-add variance calculation for sampling (might take this away)
 ---add glass/refractive
 https://www.scratchapixel.com/lessons/3d-basic-rendering/introduction-to-shading/reflection-refraction-fresnel
 
-
-
-
  
 CODE CLEANUP
 +++add threaded render (4 threads)
@@ -280,5 +277,5 @@ CODE CLEANUP
 -scene design and production
 
 
-
+-Bus errors are generated for certain scenes.  What triggers this?
 

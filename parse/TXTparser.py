@@ -35,7 +35,7 @@ def getIndices(fyle):
 	for lyne in fyle:
 		m = re.match(r"var triangleIndices = \[", lyne)
 		if(m != None):
-			print "here"
+			# print "here"
 			break;
 	for lyne in fyle:
 		n = re.match("]", lyne)
@@ -48,7 +48,7 @@ def getIndices(fyle):
 				# print x, y, z
 				indexList.append((x, y, z))
 		if(n != None):
-			print "here2"
+			# print "here2"
 			break
 	return indexList
 

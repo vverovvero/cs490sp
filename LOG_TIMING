@@ -1,3 +1,17 @@
+fig1.sce (lo, high)
+Time elapsed 36.445684 seconds
+Time elapsed 1010.536735 seconds
+
+fig2.sce (high) (just bunny and teapot)
+Time elapsed 3577.509953 seconds
+
+fig3.sce (high) (only spheres, depth = 50)
+Time elapsed 978.591085 seconds
+
+fig4.sce (high) (only spheres, depth = 140)
+Time elapsed 1006.195048 seconds
+
+=====
 simple.bin
 Time elapsed 10.582470 seconds
 

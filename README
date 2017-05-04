@@ -45,6 +45,8 @@ The output of this program is a .png that shows the rendered scene.
 ./makebin.sh [file.sce] [file.bin]
 ./makepng.sh [file.bin] [file.png] [res]
 
+./makesce.sh [obj file] [txt file] [sce file]
+
 Relies on subdirectories sce, bin, png
 res can be low or high
 
@@ -112,6 +114,8 @@ SCENE GENERATION SAMPLE WORKFLOW:
 python geometry/SCEparser.py scene1.sce scene1.bin
 ./main scene1.bin scene1.png
 
+Note: REFRACTIVE material types are currently unimplemented, and program will exit if REFRACTIVE material is encountered.
+
 
 ---------------------------------------------------------------------
 /*********************** Acceleration ******************************/
@@ -169,6 +173,8 @@ According to some research online, the best way to build the kd-tree is by using
 ---------------------------------------------------------------------
 /************************** Materials ******************************/
 ---------------------------------------------------------------------
+-glass was not implemented
+
 
 ---------------------------------------------------------------------
 /************************** Lights *********************************/

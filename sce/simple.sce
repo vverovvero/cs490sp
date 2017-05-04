@@ -24,7 +24,7 @@ MATERIAL Color(200, 170, 60) Type(PHONG) Metal(1) Specular(0.5) Lambert(0.4) Amb
 MATERIAL Type(REFRACTIVE) Color(189, 198, 209) Specular(1.5) Lambert(0.65) Ambient(0.2) IndexOfRefraction(1.560) Reflection(0.2) Transmission(0.8)
 
 
-SPHERE Point(70, 25, 50) Radius(25) Material(6)
+SPHERE Point(70, 25, 50) Radius(25) Material(5)
 SPHERE Point(20, 10, 50) Radius(10) Material(3)
 #SPHERE Point(50, 10, 25) Radius(10) Material(1)
 
